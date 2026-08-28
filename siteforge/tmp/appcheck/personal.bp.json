@@ -1,0 +1,24 @@
+{
+    "bilingual":  false,
+    "backend":  "django",
+    "projectName":  "personal",
+    "siteType":  "personal",
+    "uiModules":  [
+                      "anim.reveal"
+                  ],
+    "branding":  {
+                     "title":  "App Check",
+                     "logoMode":  "both",
+                     "logo":  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                     "tagline":  "App check"
+                 },
+    "template":  "paper",
+    "language":  "en",
+    "adminAccessCode":  "demo0000",
+    "modules":  [
+                    "pages",
+                    "contact-form",
+                    "auth"
+                ],
+    "database":  "sqlite"
+}

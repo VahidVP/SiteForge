@@ -1,0 +1,539 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Api.Data;
+using Api.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Api.Endpoints;
+
+public record OwnerLoginRequest(string Code);
+
+public static class AdminEndpoints
+{
+    public static async Task<bool> IsAdminAsync(HttpContext http, AppDbContext db)
+    {
+        var token = http.Request.Headers["Authorization"].ToString();
+        if (string.IsNullOrEmpty(token)) return false;
+        var id = token;
+        if (token.StartsWith("Bearer ")) id = token["Bearer ".Length..].Trim();
+        else if (token.StartsWith("Owner ")) id = token["Owner ".Length..].Trim();
+        else return false;
+        if (id.Length == 0) return false;
+        if (await db.OwnerTokens.AnyAsync(t => t.Id == id)) return true;
+{{#if auth}}
+        var user = await AuthEndpoints.GetUserFromRequestAsync(http, db);
+        if (user is not null && user.IsAdmin) return true;
+{{/if}}
+        return false;
+    }
+
+    public static void MapAdminEndpoints(this WebApplication app)
+    {
+        app.MapPost("/api/owner/login", async (OwnerLoginRequest request, AppDbContext db, IConfiguration config) =>
+        {
+            var expected = config["AdminAccessCode"] ?? "";
+            if (expected.Length == 0)
+                return Results.Json(new { message = "Owner access is not configured for this site." }, statusCode: 403);
+            if (request.Code?.Trim() != expected)
+                return Results.Json(new { message = "Wrong code." }, statusCode: 400);
+            var token = new OwnerToken { Id = Guid.NewGuid().ToString("N"), ExpiresAt = DateTime.UtcNow.AddDays(30) };
+            db.OwnerTokens.Add(token);
+            await db.SaveChangesAsync();
+            return Results.Ok(new { token = token.Id });
+        });
+
+{{#if contact}}
+        app.MapGet("/api/admin/messages", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var messages = await db.ContactMessages.OrderByDescending(m => m.CreatedAt).ToListAsync();
+            return Results.Ok(messages);
+        });
+{{/if}}
+{{#if auth}}
+        app.MapGet("/api/admin/users", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var users = await db.Users.OrderBy(u => u.Id).Select(u => new { u.Id, u.Email, IsAdmin = u.IsAdmin }).ToListAsync();
+            return Results.Ok(users);
+        });
+
+        app.MapDelete("/api/admin/users/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var user = await db.Users.FindAsync(id);
+            if (user is null) return Results.NotFound(new { message = "User not found." });
+            var currentEmail = await CurrentEmailAsync(http, db);
+            if (user.Email == currentEmail) return Results.BadRequest(new { message = "You cannot delete your own account." });
+            db.Users.Remove(user);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+{{/if}}
+{{#if shop}}
+        app.MapGet("/api/admin/products", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var products = await db.Products.OrderBy(p => p.Id).ToListAsync();
+            return Results.Ok(products.Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.NameFa,
+                p.Description,
+                p.DescriptionFa,
+                p.Price,
+                p.ImageUrl,
+                Gallery = ParseGallery(p.GalleryJson),
+                GalleryJson = p.GalleryJson,
+                Details = ParseDetails(p.DetailsJson),
+                DetailsJson = p.DetailsJson,
+                p.Featured
+            }));
+        });
+
+        app.MapPost("/api/admin/products", async (CreateProductRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return Results.BadRequest(new { message = "Name is required." });
+            string detailsJson = "{}";
+            if (request.Details is not null)
+            {
+                try { detailsJson = JsonSerializer.Serialize(request.Details); } catch { detailsJson = "{}"; }
+            }
+            else if (!string.IsNullOrWhiteSpace(request.DetailsJson))
+            {
+                try
+                {
+                    var parsed = JsonNode.Parse(request.DetailsJson, documentOptions: new JsonDocumentOptions { AllowTrailingCommas = true });
+                    detailsJson = parsed?.ToJsonString() ?? "{}";
+                }
+                catch { detailsJson = request.DetailsJson; }
+            }
+            var product = new Product
+            {
+                Name = request.Name.Trim(),
+                NameFa = request.NameFa?.Trim() ?? string.Empty,
+                Description = request.Description?.Trim() ?? string.Empty,
+                DescriptionFa = request.DescriptionFa?.Trim() ?? string.Empty,
+                Price = request.Price,
+                ImageUrl = request.ImageUrl?.Trim() ?? string.Empty,
+                GalleryJson = request.Gallery is not null ? JsonSerializer.Serialize(request.Gallery) : "[]",
+                DetailsJson = detailsJson,
+                Featured = request.Featured
+            };
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                product.Id,
+                product.Name,
+                product.NameFa,
+                product.Description,
+                product.DescriptionFa,
+                product.Price,
+                product.ImageUrl,
+                Gallery = ParseGallery(product.GalleryJson),
+                GalleryJson = product.GalleryJson,
+                Details = ParseDetails(product.DetailsJson),
+                DetailsJson = product.DetailsJson,
+                product.Featured
+            });
+        });
+
+        app.MapPut("/api/admin/products/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var product = await db.Products.FindAsync(id);
+            if (product is null) return Results.NotFound(new { message = "Product not found." });
+            http.Request.EnableBuffering();
+            string bodyText = "";
+            try
+            {
+                using var reader = new StreamReader(http.Request.Body, leaveOpen:true);
+                bodyText = await reader.ReadToEndAsync();
+                http.Request.Body.Position = 0;
+            } catch {}
+            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            UpdateProductRequest? req = null;
+            try { req = JsonSerializer.Deserialize<UpdateProductRequest>(bodyText, opts); } catch {}
+            bool handled = false;
+            if (req is not null && (req.Name != null || req.NameFa != null || req.Description != null || req.DescriptionFa != null || req.Price.HasValue || req.ImageUrl != null || req.Featured.HasValue || req.Details != null || req.DetailsJson != null || req.Gallery != null))
+            {
+                if (!string.IsNullOrWhiteSpace(req.Name)) product.Name = req.Name.Trim();
+                if (req.NameFa is not null) product.NameFa = req.NameFa.Trim();
+                if (req.Description is not null) product.Description = req.Description.Trim();
+                if (req.DescriptionFa is not null) product.DescriptionFa = req.DescriptionFa.Trim();
+                if (req.Price.HasValue) product.Price = req.Price.Value;
+                if (req.ImageUrl is not null) product.ImageUrl = req.ImageUrl.Trim();
+                if (req.Featured.HasValue) product.Featured = req.Featured.Value;
+                if (req.Gallery is not null) product.GalleryJson = JsonSerializer.Serialize(req.Gallery);
+                if (req.Details is not null)
+                {
+                    try { product.DetailsJson = JsonSerializer.Serialize(req.Details); handled = true; } catch {}
+                }
+                else if (!string.IsNullOrWhiteSpace(req.DetailsJson))
+                {
+                    try
+                    {
+                        var parsed = JsonNode.Parse(req.DetailsJson, documentOptions: new JsonDocumentOptions { AllowTrailingCommas = true });
+                        product.DetailsJson = parsed?.ToJsonString() ?? "{}";
+                        handled = true;
+                    }
+                    catch { product.DetailsJson = req.DetailsJson; handled = true; }
+                }
+            }
+            if (!handled)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(bodyText);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("name", out var v) && v.ValueKind == JsonValueKind.String) product.Name = v.GetString()?.Trim() ?? product.Name;
+                    if (root.TryGetProperty("nameFa", out var vnfa) && vnfa.ValueKind == JsonValueKind.String) product.NameFa = vnfa.GetString()?.Trim() ?? product.NameFa;
+                    if (root.TryGetProperty("name_fa", out var vnfa2) && vnfa2.ValueKind == JsonValueKind.String) product.NameFa = vnfa2.GetString()?.Trim() ?? product.NameFa;
+                    if (root.TryGetProperty("description", out var vd) && vd.ValueKind == JsonValueKind.String) product.Description = vd.GetString() ?? product.Description;
+                    if (root.TryGetProperty("descriptionFa", out var vdfa) && vdfa.ValueKind == JsonValueKind.String) product.DescriptionFa = vdfa.GetString() ?? product.DescriptionFa;
+                    if (root.TryGetProperty("description_fa", out var vdfa2) && vdfa2.ValueKind == JsonValueKind.String) product.DescriptionFa = vdfa2.GetString() ?? product.DescriptionFa;
+                    if (root.TryGetProperty("price", out var vp) && vp.ValueKind == JsonValueKind.Number) product.Price = vp.GetDecimal();
+                    if (root.TryGetProperty("image_url", out var vi) && vi.ValueKind == JsonValueKind.String) product.ImageUrl = vi.GetString()?.Trim() ?? product.ImageUrl;
+                    if (root.TryGetProperty("imageUrl", out var viu) && viu.ValueKind == JsonValueKind.String) product.ImageUrl = viu.GetString()?.Trim() ?? product.ImageUrl;
+                    if (root.TryGetProperty("ImageUrl", out var vi2) && vi2.ValueKind == JsonValueKind.String) product.ImageUrl = vi2.GetString()?.Trim() ?? product.ImageUrl;
+                    if (root.TryGetProperty("featured", out var vf) && (vf.ValueKind == JsonValueKind.True || vf.ValueKind == JsonValueKind.False)) product.Featured = vf.GetBoolean();
+                    if (root.TryGetProperty("Featured", out var vf2) && (vf2.ValueKind == JsonValueKind.True || vf2.ValueKind == JsonValueKind.False)) product.Featured = vf2.GetBoolean();
+                    if (root.TryGetProperty("details", out var vdet) && (vdet.ValueKind == JsonValueKind.Object || vdet.ValueKind == JsonValueKind.Array))
+                    {
+                        product.DetailsJson = vdet.GetRawText();
+                    }
+                    else if (root.TryGetProperty("Details", out var vdet2) && (vdet2.ValueKind == JsonValueKind.Object || vdet2.ValueKind == JsonValueKind.Array))
+                    {
+                        product.DetailsJson = vdet2.GetRawText();
+                    }
+                    else if (root.TryGetProperty("DetailsJson", out var vdjs) && vdjs.ValueKind == JsonValueKind.String)
+                    {
+                        product.DetailsJson = vdjs.GetString() ?? "{}";
+                    }
+                    else if (root.TryGetProperty("detailsJson", out var vdjs2) && vdjs2.ValueKind == JsonValueKind.String)
+                    {
+                        product.DetailsJson = vdjs2.GetString() ?? "{}";
+                    }
+                    if (root.TryGetProperty("gallery", out var vgal) && vgal.ValueKind == JsonValueKind.Array)
+                    {
+                        product.GalleryJson = vgal.GetRawText();
+                    }
+                    else if (root.TryGetProperty("Gallery", out var vgal2) && vgal2.ValueKind == JsonValueKind.Array)
+                    {
+                        product.GalleryJson = vgal2.GetRawText();
+                    }
+                }
+                catch {}
+            }
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                product.Id,
+                product.Name,
+                product.NameFa,
+                product.Description,
+                product.DescriptionFa,
+                product.Price,
+                product.ImageUrl,
+                Gallery = ParseGallery(product.GalleryJson),
+                GalleryJson = product.GalleryJson,
+                Details = ParseDetails(product.DetailsJson),
+                DetailsJson = product.DetailsJson,
+                product.Featured
+            });
+        });
+
+        app.MapDelete("/api/admin/products/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var product = await db.Products.FindAsync(id);
+            if (product is null) return Results.NotFound(new { message = "Product not found." });
+            db.Products.Remove(product);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        app.MapGet("/api/admin/orders", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var orders = await db.Orders.Include(o => o.User).OrderByDescending(o => o.CreatedAt).ToListAsync();
+            return Results.Ok(orders.Select(StoreEndpoints.ToOrderJson));
+        });
+
+        app.MapGet("/api/admin/tickets", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var tickets = await db.Tickets.Include(tk => tk.User).OrderByDescending(tk => tk.CreatedAt).ToListAsync();
+            return Results.Ok(tickets.Select(tk => StoreEndpoints.ToTicketJson(tk, tk.User?.Email)));
+        });
+
+        app.MapGet("/api/admin/tickets/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var messages = await db.TicketMessages.Where(m => m.TicketId == id).ToListAsync();
+            return Results.Ok(messages.Select(StoreEndpoints.ToMessageJson));
+        });
+
+        app.MapPost("/api/admin/tickets/{id}/reply", async (int id, ReplyRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            if (string.IsNullOrWhiteSpace(request.Body)) return Results.BadRequest(new { message = "Body required." });
+            db.TicketMessages.Add(new TicketMessage { TicketId = id, Sender = "admin", Body = request.Body.Trim() });
+            await db.Tickets.Where(tk => tk.Id == id).ExecuteUpdateAsync(s => s.SetProperty(tk => tk.Status, "answered"));
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        app.MapPost("/api/admin/tickets/{id}/close", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            await db.Tickets.Where(tk => tk.Id == id).ExecuteUpdateAsync(s => s.SetProperty(tk => tk.Status, "closed"));
+            return Results.NoContent();
+        });
+
+        app.MapGet("/api/admin/settings/payment", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var setting = await StoreEndpoints.GetPaymentSettingAsync(db);
+            return Results.Ok(new { enabled = setting.Enabled, sandbox = setting.Sandbox, merchantId = setting.MerchantId });
+        });
+
+        app.MapPut("/api/admin/settings/payment", async (PaymentSettingsRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var setting = await StoreEndpoints.GetPaymentSettingAsync(db);
+            setting.Enabled = request.Enabled;
+            setting.Sandbox = request.Sandbox;
+            setting.MerchantId = request.MerchantId?.Trim() ?? string.Empty;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { enabled = setting.Enabled, sandbox = setting.Sandbox, merchantId = setting.MerchantId });
+        });
+{{/if}}
+{{#if isPersonal}}
+        app.MapGet("/api/admin/projects", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var projects = await db.Projects.OrderBy(p => p.Order).ThenBy(p => p.Id).ToListAsync();
+            return Results.Ok(projects.Select(p => new
+            {
+                p.Id, p.Name, p.NameFa, p.Summary, p.SummaryFa, p.Description, p.DescriptionFa,
+                Tags = ParseList(p.TagsJson), Gallery = ParseList(p.GalleryJson), p.Order
+            }));
+        });
+
+        app.MapPost("/api/admin/projects", async (CreateProjectRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return Results.BadRequest(new { message = "Name is required." });
+            var project = new Project
+            {
+                Name = request.Name.Trim(),
+                NameFa = request.NameFa?.Trim() ?? string.Empty,
+                Summary = request.Summary?.Trim() ?? string.Empty,
+                SummaryFa = request.SummaryFa?.Trim() ?? string.Empty,
+                Description = request.Description?.Trim() ?? string.Empty,
+                DescriptionFa = request.DescriptionFa?.Trim() ?? string.Empty,
+                TagsJson = request.Tags is not null ? JsonSerializer.Serialize(request.Tags) : "[]",
+                GalleryJson = request.Gallery is not null ? JsonSerializer.Serialize(request.Gallery) : "[]",
+                Order = request.Order
+            };
+            db.Projects.Add(project);
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                project.Id, project.Name, project.NameFa, project.Summary, project.SummaryFa,
+                project.Description, project.DescriptionFa,
+                Tags = ParseList(project.TagsJson), Gallery = ParseList(project.GalleryJson), project.Order
+            });
+        });
+
+        app.MapPut("/api/admin/projects/{id}", async (int id, UpdateProjectRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var project = await db.Projects.FindAsync(id);
+            if (project is null) return Results.NotFound(new { message = "Project not found." });
+            if (request.Name is not null) project.Name = request.Name.Trim();
+            if (request.NameFa is not null) project.NameFa = request.NameFa.Trim();
+            if (request.Summary is not null) project.Summary = request.Summary.Trim();
+            if (request.SummaryFa is not null) project.SummaryFa = request.SummaryFa.Trim();
+            if (request.Description is not null) project.Description = request.Description.Trim();
+            if (request.DescriptionFa is not null) project.DescriptionFa = request.DescriptionFa.Trim();
+            if (request.Tags is not null) project.TagsJson = JsonSerializer.Serialize(request.Tags);
+            if (request.Gallery is not null) project.GalleryJson = JsonSerializer.Serialize(request.Gallery);
+            if (request.Order.HasValue) project.Order = request.Order.Value;
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                project.Id, project.Name, project.NameFa, project.Summary, project.SummaryFa,
+                project.Description, project.DescriptionFa,
+                Tags = ParseList(project.TagsJson), Gallery = ParseList(project.GalleryJson), project.Order
+            });
+        });
+
+        app.MapDelete("/api/admin/projects/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var project = await db.Projects.FindAsync(id);
+            if (project is null) return Results.NotFound(new { message = "Project not found." });
+            db.Projects.Remove(project);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+{{/if}}
+{{#if isBusiness}}
+        app.MapGet("/api/admin/services", async (HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var services = await db.Services.OrderBy(s => s.Order).ThenBy(s => s.Id).ToListAsync();
+            return Results.Ok(services.Select(s => new
+            {
+                s.Id, s.Title, s.TitleFa, s.Text, s.TextFa, s.Icon,
+                Gallery = ParseList(s.GalleryJson), s.Order
+            }));
+        });
+
+        app.MapPost("/api/admin/services", async (CreateServiceRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            if (string.IsNullOrWhiteSpace(request.Title))
+                return Results.BadRequest(new { message = "Title is required." });
+            var service = new Service
+            {
+                Title = request.Title.Trim(),
+                TitleFa = request.TitleFa?.Trim() ?? string.Empty,
+                Text = request.Text?.Trim() ?? string.Empty,
+                TextFa = request.TextFa?.Trim() ?? string.Empty,
+                Icon = request.Icon?.Trim() ?? string.Empty,
+                GalleryJson = request.Gallery is not null ? JsonSerializer.Serialize(request.Gallery) : "[]",
+                Order = request.Order
+            };
+            db.Services.Add(service);
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                service.Id, service.Title, service.TitleFa, service.Text, service.TextFa, service.Icon,
+                Gallery = ParseList(service.GalleryJson), service.Order
+            });
+        });
+
+        app.MapPut("/api/admin/services/{id}", async (int id, UpdateServiceRequest request, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var service = await db.Services.FindAsync(id);
+            if (service is null) return Results.NotFound(new { message = "Service not found." });
+            if (request.Title is not null) service.Title = request.Title.Trim();
+            if (request.TitleFa is not null) service.TitleFa = request.TitleFa.Trim();
+            if (request.Text is not null) service.Text = request.Text.Trim();
+            if (request.TextFa is not null) service.TextFa = request.TextFa.Trim();
+            if (request.Icon is not null) service.Icon = request.Icon.Trim();
+            if (request.Gallery is not null) service.GalleryJson = JsonSerializer.Serialize(request.Gallery);
+            if (request.Order.HasValue) service.Order = request.Order.Value;
+            await db.SaveChangesAsync();
+            return Results.Ok(new
+            {
+                service.Id, service.Title, service.TitleFa, service.Text, service.TextFa, service.Icon,
+                Gallery = ParseList(service.GalleryJson), service.Order
+            });
+        });
+
+        app.MapDelete("/api/admin/services/{id}", async (int id, HttpContext http, AppDbContext db) =>
+        {
+            if (!await IsAdminAsync(http, db)) return Deny();
+            var service = await db.Services.FindAsync(id);
+            if (service is null) return Results.NotFound(new { message = "Service not found." });
+            db.Services.Remove(service);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+{{/if}}
+        app.MapGet("/api/admin/media", async (HttpContext http, IWebHostEnvironment env, AppDbContext db) =>
+        {
+            if (!await IsOwnerTokenAsync(http, db)) return Deny();
+            var root = Path.Combine(env.WebRootPath ?? "wwwroot", "media");
+            var files = new List<object>();
+            if (Directory.Exists(root))
+            {
+                foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                {
+                    var ext = Path.GetExtension(file).ToLowerInvariant();
+                    if (ext is ".webp" or ".png" or ".jpg" or ".jpeg" or ".svg" or ".gif")
+                    {
+                        var rel = Path.GetRelativePath(env.WebRootPath ?? "wwwroot", file).Replace('\\', '/');
+                        files.Add(new { name = Path.GetFileName(file), url = "/" + rel });
+                    }
+                }
+            }
+            return Results.Ok(files);
+        });
+
+        app.MapPost("/api/admin/media", async (HttpContext http, IWebHostEnvironment env, AppDbContext db) =>
+        {
+            if (!await IsOwnerTokenAsync(http, db)) return Deny();
+            var root = Path.Combine(env.WebRootPath ?? "wwwroot", "media");
+            Directory.CreateDirectory(root);
+            var saved = new List<object>();
+            foreach (var file in http.Request.Form.Files)
+            {
+                if (saved.Count >= 8) break;
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (ext is not (".webp" or ".png" or ".jpg" or ".jpeg" or ".svg" or ".gif")) continue;
+                var name = Guid.NewGuid().ToString("N")[..12] + ext;
+                var dest = Path.Combine(root, name);
+                await using var stream = File.Create(dest);
+                await file.CopyToAsync(stream);
+                saved.Add(new { url = "/media/" + name });
+            }
+            return Results.Ok(saved);
+        });
+    }
+
+{{#if auth}}
+    private static async Task<string?> CurrentEmailAsync(HttpContext http, AppDbContext db)
+    {
+        var user = await AuthEndpoints.GetUserFromRequestAsync(http, db);
+        return user?.Email;
+    }
+{{/if}}
+
+    private static Task<bool> IsOwnerTokenAsync(HttpContext http, AppDbContext db)
+    {
+        var token = http.Request.Headers["Authorization"].ToString();
+        if (string.IsNullOrEmpty(token) || !token.StartsWith("Owner "))
+            return Task.FromResult(false);
+        var id = token["Owner ".Length..].Trim();
+        if (id.Length == 0) return Task.FromResult(false);
+        return db.OwnerTokens.AnyAsync(t => t.Id == id);
+    }
+
+    private static List<string> ParseList(string json)
+    {
+        try { return JsonSerializer.Deserialize<List<string>>(json ?? "[]") ?? new List<string>(); }
+        catch { return new List<string>(); }
+    }
+
+    private static List<string> ParseGallery(string json)
+    {
+        try { return JsonSerializer.Deserialize<List<string>>(json ?? "[]") ?? new List<string>(); }
+        catch { return new List<string>(); }
+    }
+
+    private static JsonNode? ParseDetails(string json)
+    {
+        try { return JsonNode.Parse(json ?? "{}", documentOptions: new JsonDocumentOptions { AllowTrailingCommas = true }); }
+        catch { return null; }
+    }
+
+    private static IResult Deny() => Results.Json(new { message = "Admin access required." }, statusCode: 403);
+}
+
+public record CreateProductRequest(string Name, string Description, decimal Price, string ImageUrl, bool Featured, string? NameFa, string? DescriptionFa, JsonNode? Details, string? DetailsJson, List<string>? Gallery);
+public record UpdateProductRequest(string? Name, string? NameFa, string? Description, string? DescriptionFa, decimal? Price, string? ImageUrl, bool? Featured, JsonNode? Details, string? DetailsJson, List<string>? Gallery);
+public record CreateProjectRequest(string Name, string? NameFa, string? Summary, string? SummaryFa, string? Description, string? DescriptionFa, List<string>? Tags, List<string>? Gallery, int Order);
+public record UpdateProjectRequest(string? Name, string? NameFa, string? Summary, string? SummaryFa, string? Description, string? DescriptionFa, List<string>? Tags, List<string>? Gallery, int? Order);
+public record CreateServiceRequest(string Title, string? TitleFa, string? Text, string? TextFa, string? Icon, List<string>? Gallery, int Order);
+public record UpdateServiceRequest(string? Title, string? TitleFa, string? Text, string? TextFa, string? Icon, List<string>? Gallery, int? Order);

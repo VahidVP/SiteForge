@@ -1,0 +1,9 @@
+{
+  "projectName": "my-portfolio",
+  "siteType": "personal",
+  "backend": "django",
+  "database": "sqlite",
+  "modules": ["pages", "contact-form"],
+  "uiModules": ["anim.reveal"],
+  "branding": { "title": "My Portfolio", "tagline": "Hi, I build things for the web." }
+}

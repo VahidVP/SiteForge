@@ -1,0 +1,23 @@
+{
+    "bilingual":  false,
+    "backend":  "django",
+    "projectName":  "business",
+    "siteType":  "business",
+    "uiModules":  [
+                      "anim.tilt"
+                  ],
+    "branding":  {
+                     "title":  "App Check",
+                     "logoMode":  "both",
+                     "logo":  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                     "tagline":  "App check"
+                 },
+    "template":  "ocean",
+    "language":  "en",
+    "adminAccessCode":  "demo1234",
+    "modules":  [
+                    "pages",
+                    "contact-form"
+                ],
+    "database":  "sqlite"
+}

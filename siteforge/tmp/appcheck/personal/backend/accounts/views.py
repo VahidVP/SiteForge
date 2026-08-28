@@ -1,0 +1,85 @@
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from rest_framework import serializers, status
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializers import RegisterSerializer
+
+
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        if User.objects.count() == 1:
+            user.is_staff = True
+            user.is_superuser = True
+            user.save(update_fields=["is_staff", "is_superuser"])
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "email": user.email}, status=status.HTTP_201_CREATED)
+
+
+class LoginView(APIView):
+    def post(self, request):
+        email = request.data.get("email", "")
+        password = request.data.get("password", "")
+        user = authenticate(username=email, password=password)
+        if user is None:
+            return Response({"detail": "Invalid credentials."}, status=400)
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "email": user.email})
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"email": request.user.email, "isAdmin": bool(request.user.is_staff)})
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        Token.objects.filter(user=request.user).delete()
+        return Response(status=204)
+
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        data = [
+            {"id": u.id, "email": u.email, "isAdmin": bool(u.is_staff)}
+            for u in User.objects.order_by("id")
+        ]
+        return Response(data)
+
+
+class AdminUserDeleteView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, pk):
+        if request.user.pk == pk:
+            return Response({"detail": "You cannot delete your own account."}, status=400)
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=404)
+        user.delete()
+        return Response(status=204)
+
+
+from contact.models import ContactMessage
+from contact.serializers import ContactMessageSerializer
+
+
+class AdminMessageListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        serializer = ContactMessageSerializer(ContactMessage.objects.all(), many=True)
+        return Response(serializer.data)

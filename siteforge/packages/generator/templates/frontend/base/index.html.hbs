@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="{{language}}" {{#if isFa}}dir="rtl"{{/if}}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{#if isFa}}{{#if titleFa}}{{titleFa}}{{else}}{{title}}{{/if}}{{else}}{{title}}{{/if}}</title>
+{{#if isPersonal}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+{{/if}}
+{{#if isBusiness}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Lora:wght@600;700&display=swap" rel="stylesheet" />
+{{/if}}
+{{#if isShop}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+{{/if}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body data-template="{{template}}" data-lang="{{language}}" data-header="{{headerStyle}}" data-footer="{{footerStyle}}">
+    <div id="root"></div>
+    <script>
+      window.__SITE__ = {
+        title: {{json title}},
+        tagline: {{json tagline}},
+        titleFa: {{json titleFa}},
+        taglineFa: {{json taglineFa}},
+        logo: {{json logo}},
+        logoMode: {{json logoMode}},
+        siteType: {{json siteType}},
+        template: {{json template}},
+        language: {{json language}},
+        bilingual: {{bool bilingual}},
+        headerStyle: {{json headerStyle}},
+        footerStyle: {{json footerStyle}},
+        heroStyle: {{json heroStyle}},
+        heroImage: {{json heroImage}},
+        authScheme: {{json authScheme}},
+        hasOwnerCode: {{bool adminAccessCode}},
+        auth: {{bool auth}},
+        shop: {{bool shop}},
+        contact: {{bool contact}},
+        reveal: {{bool fReveal}},
+        hoverLift: {{bool fLift}},
+        textReveal: {{bool fTextReveal}},
+        tilt: {{bool fTilt}},
+        magnetic: {{bool fMagnetic}},
+        aurora: {{bool fAurora}},
+        marquee: {{bool fMarquee}}
+      };
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

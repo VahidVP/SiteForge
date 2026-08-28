@@ -1,0 +1,20 @@
+{
+    "backend":  "dotnet",
+    "projectName":  "shop-dotnet-noauth",
+    "siteType":  "shop",
+    "uiModules":  [
+                      "anim.aurora"
+                  ],
+    "branding":  {
+                     "tagline":  "Cart without accounts.",
+                     "title":  "Shop Sample"
+                 },
+    "template":  "sunset",
+    "language":  "en",
+    "modules":  [
+                    "pages",
+                    "contact-form",
+                    "shop-catalog"
+                ],
+    "database":  "sqlite"
+}

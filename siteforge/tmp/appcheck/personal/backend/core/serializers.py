@@ -1,0 +1,65 @@
+import json
+
+from rest_framework import serializers
+
+from .models import Page, Project
+
+
+class PageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = ["slug", "title", "content"]
+
+
+def _json_list(raw, default=None):
+    if default is None:
+        default = []
+    try:
+        val = json.loads(raw) if raw else default
+        if isinstance(val, list):
+            return val
+        return default
+    except Exception:
+        return default
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    nameFa = serializers.CharField(source="name_fa", required=False, allow_blank=True)
+    summary = serializers.CharField(required=False, allow_blank=True)
+    summaryFa = serializers.CharField(source="summary_fa", required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+    descriptionFa = serializers.CharField(source="description_fa", required=False, allow_blank=True)
+    tags = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = ["id", "name", "nameFa", "summary", "summaryFa", "description", "descriptionFa", "tags", "gallery", "order", "createdAt"]
+        extra_kwargs = {"name": {"required": True}, "order": {"required": False}}
+
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+
+    def get_tags(self, obj):
+        return _json_list(obj.tags)
+
+    def get_gallery(self, obj):
+        return _json_list(obj.gallery)
+
+    def _persist_lists(self, valid):
+        gallery = self.initial_data.get("gallery")
+        if gallery is not None and isinstance(gallery, list):
+            valid["gallery"] = json.dumps([str(x) for x in gallery if x], ensure_ascii=False)
+        tags = self.initial_data.get("tags")
+        if tags is not None and isinstance(tags, list):
+            valid["tags"] = json.dumps([str(x) for x in tags if x], ensure_ascii=False)
+        for source, target in (("nameFa", "name_fa"), ("summaryFa", "summary_fa"), ("descriptionFa", "description_fa")):
+            if target not in valid and source in self.initial_data:
+                valid[target] = str(self.initial_data.get(source) or "").strip()
+        return valid
+
+    def create(self, validated_data):
+        return super().create(self._persist_lists(validated_data))
+
+    def update(self, instance, validated_data):
+        return super().update(instance, self._persist_lists(validated_data))
+

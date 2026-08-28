@@ -1,0 +1,71 @@
+using Api.Models;
+
+namespace Api.Data;
+
+public static class DbInitializer
+{
+    public static async Task InitializeAsync(WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.EnsureCreatedAsync();
+
+        var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+        Directory.CreateDirectory(Path.Combine(webRoot, "media"));
+
+        if (!db.Pages.Any())
+        {
+            db.Pages.AddRange(
+                new Page
+                {
+                    Slug = "home",
+                    Title = "Home",
+                    Content = "Welcome! This content lives in your database - edit it in Data/DbInitializer.cs or wire up an admin UI."
+                },
+                new Page
+                {
+                    Slug = "about",
+                    Title = "About",
+                    Content = "Tell your story here."
+                }
+            );
+            await db.SaveChangesAsync();
+        }
+{{#if shop}}
+        if (!db.Products.Any())
+        {
+            db.Products.AddRange(
+                new Product { Name = "Aurora Hoodie", NameFa = "هودی آرورا", Description = "Soft fleece hoodie with embroidered logo.", DescriptionFa = "هودی نرم با لوگوی گلدوزی‌شده.", Price = 49.90m, Featured = true },
+                new Product { Name = "Drift Sneakers", NameFa = "کفش دریفت", Description = "Lightweight everyday sneakers with memory foam.", DescriptionFa = "کفش روزمره سبک با کفی مموری فوم.", Price = 79.00m, Featured = true },
+                new Product { Name = "Nomad Backpack", NameFa = "کوله نومد", Description = "Water-resistant 25L backpack for daily commutes.", DescriptionFa = "کوله ۲۵ لیتری ضدآب برای رفت‌وآمد روزانه.", Price = 59.50m },
+                new Product { Name = "Lumen Desk Lamp", NameFa = "چراغ رومیزی لومن", Description = "Dimmable LED lamp with wireless charging base.", DescriptionFa = "چراغ LED با نور قابل تنظیم و شارژ بی‌سیم.", Price = 34.90m },
+                new Product { Name = "Terra Mug", NameFa = "ماگ ترا", Description = "Handcrafted ceramic mug, 350ml.", DescriptionFa = "ماگ سرامیکی دست‌ساز ۳۵۰ میلی‌لیتر.", Price = 18.00m },
+                new Product { Name = "Echo Speaker", NameFa = "اسپیکر اکو", Description = "Compact bluetooth speaker with 12h battery.", DescriptionFa = "اسپیکر بلوتوث جمع‌وجور با ۱۲ ساعت باتری.", Price = 45.00m }
+            );
+            await db.SaveChangesAsync();
+        }
+{{/if}}
+{{#if isPersonal}}
+        if (!db.Projects.Any())
+        {
+            db.Projects.AddRange(
+                new Project { Name = "Nimbus Notes", NameFa = "یادداشت‌های نیمبوس", Summary = "A minimal note-taking app with offline sync.", SummaryFa = "برنامهٔ یادداشت‌برداری مینیمال با همگام‌سازی آفلاین.", Description = "Nimbus is a clean, keyboard-first notes app. It works fully offline, syncs when a connection returns, and keeps everything local-first.", DescriptionFa = "نیمبوس یک برنامهٔ یادداشت‌برداری تمیز و مبتنی بر کیبورد است؛ کاملاً آفلاین کار می‌کند، هنگام اتصال همگام می‌شود و همه‌چیز را محلی نگه می‌دارد.", TagsJson = "[\"React\",\"PWA\"]", Order = 1 },
+                new Project { Name = "Orbit Dashboard", NameFa = "داشبورد اوربیت", Summary = "Analytics dashboard with realtime charts.", SummaryFa = "داشبورد تحلیلی با نمودارهای زنده.", Description = "Orbit turns raw event streams into live charts. The dashboard streams metrics over WebSockets and renders them with canvas charts.", DescriptionFa = "اوربیت جریان رویدادهای خام را به نمودارهای زنده تبدیل می‌کند؛ داده‌ها از طریق WebSocket پخش و با نمودارهای Canvas نمایش داده می‌شوند.", TagsJson = "[\"TypeScript\",\"Charts\"]", Order = 2 },
+                new Project { Name = "Fable Landing", NameFa = "لندینگ فیبل", Summary = "Story-driven landing page for an indie game.", SummaryFa = "صفحهٔ فرود روایت‌محور برای یک بازی مستقل.", Description = "A scroll-driven landing page that tells the game's story scene by scene with subtle parallax and transition animations.", DescriptionFa = "یک صفحهٔ فرود مبتنی بر اسکرول که داستان بازی را صحنه‌به‌صحنه با افکت پارالاکس و انیمیشن‌های نرم روایت می‌کند.", TagsJson = "[\"Animation\",\"CSS\"]", Order = 3 }
+            );
+            await db.SaveChangesAsync();
+        }
+{{/if}}
+{{#if isBusiness}}
+        if (!db.Services.Any())
+        {
+            db.Services.AddRange(
+                new Service { Title = "Web Development", TitleFa = "توسعه وب", Icon = "🌐", Text = "Modern, fast websites and web apps built with React and a robust backend. From brochure sites to full platforms.", TextFa = "وب‌سایت‌ها و اپلیکیشن‌های وب مدرن و سریع با React و بک‌اند قدرتمند؛ از سایت‌های معرفی تا پلتفرم‌های کامل.", Order = 1 },
+                new Service { Title = "UI / UX Design", TitleFa = "طراحی رابط و تجربه کاربری", Icon = "🎨", Text = "Interfaces that put content first. User flows, prototypes and design systems tested with real users.", TextFa = "رابط‌هایی که محتوا را در اولویت قرار می‌دهند؛ مسیر کاربر، نمونهٔ اولیه و سیستم‌های طراحی که با کاربران واقعی آزموده می‌شوند.", Order = 2 },
+                new Service { Title = "Consulting", TitleFa = "مشاوره", Icon = "💡", Text = "Technical guidance for product teams - architecture reviews, code audits and mentoring.", TextFa = "راهنمایی فنی برای تیم‌های محصول؛ بازبینی معماری، ممیزی کد و مربی‌گری.", Order = 3 }
+            );
+            await db.SaveChangesAsync();
+        }
+{{/if}}
+    }
+}

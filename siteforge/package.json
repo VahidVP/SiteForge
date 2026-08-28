@@ -1,0 +1,27 @@
+{
+  "name": "siteforge",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Visual builder that generates ready-to-run Django or ASP.NET Core + React websites.",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,studio -c blue,magenta \"npm:dev:api\" \"npm:dev:studio\"",
+    "dev:api": "npm run dev -w @siteforge/generator",
+    "dev:studio": "npm run dev -w @siteforge/studio",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc -p packages/generator --noEmit && tsc -p packages/studio --noEmit",
+    "gen": "tsx packages/generator/src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "concurrently": "^9.0.0",
+    "playwright-core": "^1.62.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.3"
+  }
+}

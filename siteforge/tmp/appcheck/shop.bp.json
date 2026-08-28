@@ -1,0 +1,25 @@
+{
+    "bilingual":  false,
+    "backend":  "django",
+    "projectName":  "shop",
+    "siteType":  "shop",
+    "uiModules":  [
+                      "anim.reveal",
+                      "anim.aurora"
+                  ],
+    "branding":  {
+                     "title":  "App Check",
+                     "logoMode":  "both",
+                     "logo":  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                     "tagline":  "App check"
+                 },
+    "template":  "forest",
+    "language":  "en",
+    "adminAccessCode":  "demo4321",
+    "modules":  [
+                    "pages",
+                    "contact-form",
+                    "shop-catalog"
+                ],
+    "database":  "sqlite"
+}

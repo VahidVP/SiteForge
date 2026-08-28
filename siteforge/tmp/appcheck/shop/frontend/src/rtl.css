@@ -1,0 +1,20 @@
+[dir='rtl'] table.data th,
+[dir='rtl'] .console-link {
+  text-align: right;
+}
+
+body[data-lang='fa'] {
+  letter-spacing: 0;
+}
+
+body[data-lang='fa'] h1 {
+  letter-spacing: 0;
+}
+
+[dir='rtl'] .brand {
+  flex-direction: row-reverse;
+}
+
+html[dir='rtl'] {
+  direction: rtl;
+}

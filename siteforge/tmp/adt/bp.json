@@ -1,0 +1,21 @@
+{
+    "backend":  "dotnet",
+    "projectName":  "personal-dotnet",
+    "siteType":  "personal",
+    "uiModules":  [
+                      "anim.reveal",
+                      "anim.magnetic"
+                  ],
+    "branding":  {
+                     "tagline":  "Built by SiteForge.",
+                     "title":  "Personal Test"
+                 },
+    "template":  "midnight",
+    "language":  "en",
+    "modules":  [
+                    "pages",
+                    "contact-form",
+                    "auth"
+                ],
+    "database":  "sqlite"
+}

@@ -1,0 +1,9 @@
+{
+  "projectName": "my-shop",
+  "siteType": "shop",
+  "backend": "dotnet",
+  "database": "sqlite",
+  "modules": ["pages", "contact-form", "auth", "shop-catalog"],
+  "uiModules": ["anim.reveal", "anim.hover-lift"],
+  "branding": { "title": "My Shop", "tagline": "Great products, fair prices." }
+}

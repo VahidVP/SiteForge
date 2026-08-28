@@ -1,0 +1,27 @@
+{
+  "projectName": "t4glass",
+  "siteType": "personal",
+  "backend": "dotnet",
+  "database": "sqlite",
+  "template": "midnight",
+  "language": "fa",
+  "bilingual": true,
+  "headerStyle": "glass",
+  "footerStyle": "columns",
+  "heroStyle": "glow-center",
+  "modules": [
+    "pages",
+    "contact-form"
+  ],
+  "uiModules": [
+    "anim.aurora"
+  ],
+  "branding": {
+    "title": "Glass Lab",
+    "tagline": "Glass tagline EN",
+    "titleFa": "لاب شیشه‌ای",
+    "taglineFa": "شعار شیشه‌ای",
+    "logo": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "logoMode": "both"
+  }
+}

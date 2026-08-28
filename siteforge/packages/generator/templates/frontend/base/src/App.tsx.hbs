@@ -1,0 +1,88 @@
+import { useEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import { LangProvider } from './context/LangContext'
+import Home from './pages/Home'
+import About from './pages/About'
+{{#if isPersonal}}
+import Portfolio from './pages/Portfolio'
+import PortfolioDetail from './pages/PortfolioDetail'
+{{/if}}
+{{#if isBusiness}}
+import Services from './pages/Services'
+import ServiceDetail from './pages/ServiceDetail'
+{{/if}}
+{{#if contact}}
+import Contact from './pages/Contact'
+{{/if}}
+{{#if shop}}
+import Products from './pages/Products'
+import ProductDetail from './pages/ProductDetail'
+import Cart from './pages/Cart'
+import PaymentResult from './pages/PaymentResult'
+{{/if}}
+{{#unless auth}}
+{{#if adminAccessCode}}
+import OwnerLogin from './pages/OwnerLogin'
+{{/if}}
+{{/unless}}
+{{#if auth}}
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+{{/if}}
+import Admin from './pages/Admin'
+
+function ScrollToTop() {
+  const pathname = useLocation().pathname
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
+export default function App() {
+  return (
+    <LangProvider>
+      <BrowserRouter>
+      <ScrollToTop />
+      <Navbar />
+      <div className="site-main">
+      <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          {{#if isPersonal}}
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/portfolio/:id" element={<PortfolioDetail />} />
+          {{/if}}
+          {{#if isBusiness}}
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
+          {{/if}}
+          {{#if contact}}
+          <Route path="/contact" element={<Contact />} />
+          {{/if}}
+          {{#if shop}}
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/payment/result" element={<PaymentResult />} />
+          {{/if}}
+          {{#unless auth}}
+          {{#if adminAccessCode}}
+          <Route path="/owner" element={<OwnerLogin />} />
+          {{/if}}
+          {{/unless}}
+          {{#if auth}}
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          {{/if}}
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      </div>
+      <Footer />
+      </BrowserRouter>
+    </LangProvider>
+  )
+}
