@@ -51,7 +51,7 @@ Generated sites run like this (instructions are also printed by the CLI):
   → `python manage.py makemigrations` → `migrate` → `seed_demo` → `runserver` → http://localhost:8000
 - **ASP.NET Core backend:** `cd backend` → `dotnet run` → http://localhost:8000
 
-Machine prerequisites installed during this project: Node.js 24 LTS, .NET 8 SDK, Python 3.12.
+Machine prerequisites installed during this project: Node.js 24 LTS, .NET 10 SDK (8 also present), Python 3.12.
 
 ---
 
@@ -160,6 +160,12 @@ Nothing right now — baseline is verified and stable.
 ---
 
 ## 8. Changelog (append-only, newest first)
+
+### 2026-09-01 — .NET backend upgraded to .NET 10 (LTS)
+
+- **The generated .NET backend now targets `net10.0`** — the current LTS (supported to Nov 2028) — instead of `net8.0` (LTS ends Nov 2026). Packages moved to the matching generation: **EF Core SQLite 10.0.11, Swashbuckle.AspNetCore 10.2.3**. Per the .NET 10 SDK's own guidance (NU1510), the explicit `Microsoft.Extensions.Identity.Core` reference was **removed** — it ships automatically with the framework now (as does core EF), so the generated csproj is down to just two explicit packages. Studio catalog copy and the generated README now say ".NET 10".
+- **Machine prep:** installed the **.NET 10 SDK (10.0.400)** machine-wide via winget (SDK 8.0.424 remains side-by-side for older outputs).
+- **Verification (all green):** fresh `dotnet build` of a generated personal site on net10.0 — **0 warnings, 0 errors**; booted live — `/api/pages/home/` serves, `/api/owner/login` issues an owner token, Swagger UI (Swashbuckle 10) returns HTTP 200.
 
 ### 2026-09-01 — Full dependency refresh to current stable versions (per official registries/docs)
 
