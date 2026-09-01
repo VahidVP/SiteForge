@@ -66,11 +66,15 @@ export function validateBlueprint(input: unknown): Blueprint {
   const logoMode = LOGO_MODES.has(branding.logoMode as string) ? (branding.logoMode as 'text' | 'image' | 'both') : logo ? 'both' : 'text';
 
   let adminAccessCode = String(raw.adminAccessCode ?? '').trim();
-  if (adminAccessCode && !/^[A-Za-z0-9@#$_-]{4,64}$/.test(adminAccessCode)) {
-    throw new Error('adminAccessCode may only contain letters, numbers and @ # $ _ - (4-64 chars).');
-  }
   if (modules.includes('auth')) {
     adminAccessCode = '';
+  } else {
+    if (!adminAccessCode) {
+      throw new Error('Admin access code is required for sites without user accounts.');
+    }
+    if (!/^[A-Za-z0-9@#$_-]{4,64}$/.test(adminAccessCode)) {
+      throw new Error('Admin access code must be 4–64 characters and contain only letters, numbers, and @ # $ _ -');
+    }
   }
 
   return {

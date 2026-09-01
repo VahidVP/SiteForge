@@ -386,12 +386,13 @@ export const api = {
     deleteService: (id: number) => request<void>(`/api/admin/services/${id}/`, { method: 'DELETE' })
   },
   media: {
-    list: () => request<MediaFile[]>('/api/admin/media/', {}, false),
+    // Admin-only endpoints: the owner/auth token must always be sent.
+    list: () => request<MediaFile[]>('/api/admin/media/'),
     upload: (files: FileList | File[]) => {
       const form = new FormData()
       const arr = files instanceof FileList ? Array.from(files) : files
       arr.slice(0, 8).forEach(f => form.append('images', f))
-      return request<{ url: string }[]>('/api/admin/media/', { method: 'POST', body: form }, false)
+      return request<{ url: string }[]>('/api/admin/media/', { method: 'POST', body: form })
     }
   }
 }

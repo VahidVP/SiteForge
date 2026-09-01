@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Local test outputs & logs
+tmp/
+*.log
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# .NET
+bin/
+obj/
+
+# Env
+.env

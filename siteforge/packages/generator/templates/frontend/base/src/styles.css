@@ -193,6 +193,12 @@ code {
   overflow: hidden;
 }
 
+.hero .container,
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
 .hero h1 {
   font-size: clamp(2.3rem, 5.5vw, 3.8rem);
   margin: 14px auto 10px;
@@ -915,6 +921,17 @@ body[data-footer='split'] .footer-col:nth-child(3) { display: none; }
     color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%);
   pointer-events: none;
   transition: opacity .3s ease;
+}
+
+.waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  min-height: 80px;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .hero-waves { position: relative; padding-bottom: 140px; }

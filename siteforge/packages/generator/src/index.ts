@@ -3,7 +3,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import express from 'express';
 import cors from 'cors';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { generateToDir } from './generate.js';
 import { validateBlueprint } from './validate.js';
 import { catalog } from './registry.js';
@@ -33,7 +33,7 @@ app.post('/api/generate', async (req, res) => {
   try {
     await generateToDir(bp, stage);
 
-    const zip = archiver('zip', { zlib: { level: 9 } });
+    const zip = new ZipArchive({ zlib: { level: 9 } });
     const chunks: Buffer[] = [];
     zip.on('data', (chunk: Buffer) => chunks.push(chunk));
     const done = new Promise<void>((resolve, reject) => {

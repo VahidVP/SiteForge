@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Visual builder that generates ready-to-run Django or ASP.NET Core + React websites.",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   },
   "workspaces": [
     "packages/*"
@@ -19,9 +19,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.5.0",
-    "concurrently": "^9.0.0",
+    "concurrently": "^10.0.5",
     "playwright-core": "^1.62.1",
-    "tsx": "^4.19.0",
-    "typescript": "^5.5.3"
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
   }
 }

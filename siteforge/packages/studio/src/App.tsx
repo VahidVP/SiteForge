@@ -258,10 +258,13 @@ export default function App() {
 
   const shopOn = modules.includes('shop-catalog')
   const authOn = modules.includes('auth')
+  // The owner access code is mandatory whenever User Accounts is off — it is the
+  // only key to /owner, so it can never be empty or weaker than the backend allows.
+  const accessCodeOk = authOn || /^[A-Za-z0-9@#$_-]{4,64}$/.test(accessCode.trim())
   const canNext =
     (step === 0 && siteType !== null) ||
     step === 1 || step === 2 ||
-    (step === 3 && title.trim().length > 1 && /^[a-z][a-z0-9-]{1,49}$/.test(projectName))
+    (step === 3 && title.trim().length > 1 && /^[a-z][a-z0-9-]{1,49}$/.test(projectName) && accessCodeOk)
 
   return (
     <div className="shell">
@@ -560,6 +563,9 @@ export default function App() {
                   <span className="muted" style={{ fontSize: '0.8rem' }}>
                     {t('w.ownerHint')}
                   </span>
+                  {!accessCodeOk ? (
+                    <p className="hint-error">{t('w.ownerCodeRequired')}</p>
+                  ) : null}
                 </label>
               ) : null}
               {!/^[a-z][a-z0-9-]*$/.test(projectName) && projectName.length > 0 ? (

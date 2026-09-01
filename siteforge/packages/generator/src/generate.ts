@@ -99,6 +99,13 @@ function compile(raw: string): HandlebarsTemplateDelegate {
 async function emit(srcDir: string, destDir: string, ctx: Ctx): Promise<void> {
   await fs.promises.mkdir(destDir, { recursive: true });
   const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+
+  const hbsBaseNames = new Set(
+    entries
+      .filter((e) => !e.isDirectory() && e.name.endsWith('.hbs'))
+      .map((e) => e.name.slice(0, -4))
+  );
+
   for (const entry of entries) {
     const src = path.join(srcDir, entry.name);
     if (entry.isDirectory()) {
@@ -108,6 +115,9 @@ async function emit(srcDir: string, destDir: string, ctx: Ctx): Promise<void> {
       const rendered = compile(raw)(ctx);
       await fs.promises.writeFile(path.join(destDir, entry.name.slice(0, -4)), rendered, 'utf8');
     } else {
+      if (hbsBaseNames.has(entry.name)) {
+        continue;
+      }
       await fs.promises.copyFile(src, path.join(destDir, entry.name));
     }
   }
