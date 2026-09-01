@@ -161,6 +161,12 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-01 — Waves hero background fixed
+
+- **The Waves hero no longer renders the waves as a detached/stray strip "under" the section.** Two compounded bugs: (1) the hero had no background of its own (the 2026-08-31 change that removed the aurora/glow layer from the waves hero left it transparent, so it read as bare page colour with a dark band at the bottom), and (2) rotating-`div` shapes sized against the full hero width were so flat their curves were invisible, leaving only stray corners poking through.
+- **Fix:** the generated `Hero.tsx` now ships the waves as **three full-width inline SVG layers** (smooth sine paths) stacked in a `.wave-layer` at the hero's base, each gently drifting via a `wave-drift` keyframe at a different speed/direction. The hero itself gets a subtle `bg → accent` gradient so the wave band sits *inside* the section as live water rather than under it. Content stays above the layer (`z-index`), the layer is `pointer-events: none`, and the band is clipped (`overflow: hidden`) so there's no horizontal scroll.
+- **Verification:** Playwright checks at 1920px **8/8** (hero has gradient, `.wave-layer` present, 3 SVG layers with visible fills, 3 running `wave-drift` animations, h1 not overlapped, layer spans full width, no horizontal overflow, zero page errors) and at 375px mobile **5/5** (full-width, content above, no overflow). Freshly generated site + `vite build` clean; no leftover `.waves`/`wave-spin` references in the templates.
+
 ### 2026-09-01 — .NET backend upgraded to .NET 10 (LTS)
 
 - **The generated .NET backend now targets `net10.0`** — the current LTS (supported to Nov 2028) — instead of `net8.0` (LTS ends Nov 2026). Packages moved to the matching generation: **EF Core SQLite 10.0.11, Swashbuckle.AspNetCore 10.2.3**. Per the .NET 10 SDK's own guidance (NU1510), the explicit `Microsoft.Extensions.Identity.Core` reference was **removed** — it ships automatically with the framework now (as does core EF), so the generated csproj is down to just two explicit packages. Studio catalog copy and the generated README now say ".NET 10".
