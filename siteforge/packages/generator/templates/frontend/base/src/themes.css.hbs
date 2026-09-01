@@ -1,0 +1,36 @@
+:root {
+{{#each templates}}{{#if @first}}
+  --bg: {{theme.bg}};
+  --bg-soft: {{theme.bgSoft}};
+  --surface: {{theme.surface}};
+  --surface-strong: {{theme.surfaceStrong}};
+  --border: {{theme.border}};
+  --text: {{theme.text}};
+  --muted: {{theme.muted}};
+  --accent: {{theme.accent}};
+  --accent-2: {{theme.accent2}};
+  --accent-contrast: {{theme.accentContrast}};
+  --font-head: {{theme.fontHead}};
+  --font-body: {{theme.fontBody}};
+  --glow-opacity: {{theme.glowOpacity}};
+{{/if}}{{/each}}
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+{{#each templates}}
+[data-template='{{id}}'] {
+  --bg: {{theme.bg}}; --bg-soft: {{theme.bgSoft}};
+  --surface: {{theme.surface}}; --surface-strong: {{theme.surfaceStrong}};
+  --border: {{theme.border}};
+  --text: {{theme.text}}; --muted: {{theme.muted}};
+  --accent: {{theme.accent}}; --accent-2: {{theme.accent2}}; --accent-contrast: {{theme.accentContrast}};
+  --font-head: {{theme.fontHead}}; --font-body: {{theme.fontBody}};
+  --glow-opacity: {{theme.glowOpacity}};
+}
+
+{{/each}}
+body[data-lang='fa'] {
+  --font-head: 'Vazirmatn', 'Segoe UI', system-ui, sans-serif !important;
+  --font-body: 'Vazirmatn', 'Segoe UI', system-ui, sans-serif !important;
+}

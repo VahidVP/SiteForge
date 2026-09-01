@@ -35,9 +35,10 @@ export default function Home() {
 
   return (
     <main>
-      <div className="container">
-        <Hero kicker={c.heroKicker} ctaTo={ctaTo} ctaLabel={c.ctaLabel} />
-      </div>
+      {/* Hero is intentionally NOT wrapped in .container: hero styles (glow, waves,
+          grid, spotlight) are full-bleed backgrounds that must span the whole viewport,
+          not sit inside the 1120px content box. Content is constrained inside Hero. */}
+      <Hero kicker={c.heroKicker} ctaTo={ctaTo} ctaLabel={c.ctaLabel} />
 
       <Marquee />
 

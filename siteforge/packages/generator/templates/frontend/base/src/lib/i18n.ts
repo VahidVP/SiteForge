@@ -23,12 +23,20 @@ function apply(lang: Lang) {
   document.body.dir = lang === 'fa' ? 'rtl' : ''
 }
 
+// The saved visitor language is keyed per site (by site title) so that different
+// generated sites opened on the same dev port (localhost:5173) don't leak language
+// state into each other — a Farsi-primary site must not open in English (or vice
+// versa) just because a previously generated site was last viewed in English.
+function langKey(): string {
+  return `site_lang:${site.title || 'default'}`
+}
+
 export function initLang(primary: Lang): void {
   if (!site.bilingual) {
     apply(primary)
     return
   }
-  const saved = localStorage.getItem('site_lang')
+  const saved = localStorage.getItem(langKey())
   if (saved === 'en' || saved === 'fa') {
     apply(saved)
     return
@@ -39,7 +47,7 @@ export function initLang(primary: Lang): void {
 export function setLang(lang: Lang): void {
   if (!site.bilingual) return
   apply(lang)
-  localStorage.setItem('site_lang', lang)
+  localStorage.setItem(langKey(), lang)
 }
 
 export function t(key: string): string {

@@ -1,7 +1,15 @@
 import type { Blueprint, Catalog } from '@siteforge/shared'
 
 export async function fetchCatalog(): Promise<Catalog> {
-  const res = await fetch('/api/catalog')
+  let res: Response
+  try {
+    res = await fetch('/api/catalog')
+  } catch (err) {
+    // fetch() rejects on connection errors (ECONNRESET / refused) — give a
+    // clear, actionable message instead of the raw "socket closed unexpectedly".
+    const detail = err instanceof Error ? err.message : String(err)
+    throw new Error(`Cannot connect to the generator API (${detail}). Start it with: npm run dev:api`)
+  }
   if (!res.ok) {
     throw new Error(`The generator API is not responding (status ${res.status}). Start it with: npm run dev:api`)
   }
@@ -9,11 +17,19 @@ export async function fetchCatalog(): Promise<Catalog> {
 }
 
 export async function generateSite(bp: Blueprint): Promise<void> {
-  const res = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bp)
-  })
+  let res: Response
+  try {
+    res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bp)
+    })
+  } catch (err) {
+    // Same treatment as above: connection resets during a long generate are
+    // common when the API restarts — surface a clear message.
+    const detail = err instanceof Error ? err.message : String(err)
+    throw new Error(`Cannot connect to the generator API (${detail}). Start it with: npm run dev:api`)
+  }
 
   if (!res.ok) {
     let message = 'Generation failed.'

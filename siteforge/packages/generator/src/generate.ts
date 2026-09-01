@@ -2,7 +2,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Handlebars from 'handlebars';
-import type { Blueprint } from '@siteforge/shared';
+import type { Blueprint, TemplateTheme } from '@siteforge/shared';
+import { TEMPLATES } from './registry.js';
 
 const hb = Handlebars.create();
 hb.registerHelper('json', (v: unknown) => JSON.stringify(v ?? null));
@@ -43,6 +44,8 @@ export interface Ctx {
   fMagnetic: boolean;
   fAurora: boolean;
   fMarquee: boolean;
+  /** All template palettes — consumed by themes.css.hbs so emitted CSS matches the registry. */
+  templates: Array<{ id: string; theme: TemplateTheme }>;
 }
 
 export function buildCtx(bp: Blueprint): Ctx {
@@ -82,7 +85,8 @@ export function buildCtx(bp: Blueprint): Ctx {
     fTilt: ui('anim.tilt'),
     fMagnetic: ui('anim.magnetic'),
     fAurora: ui('anim.aurora'),
-    fMarquee: ui('anim.marquee')
+    fMarquee: ui('anim.marquee'),
+    templates: TEMPLATES.map(t => ({ id: t.id, theme: t.theme }))
   };
 }
 

@@ -1,0 +1,20 @@
+{
+  "projectName": "bilingual-check",
+  "siteType": "personal",
+  "backend": "django",
+  "database": "sqlite",
+  "template": "midnight",
+  "language": "fa",
+  "bilingual": true,
+  "modules": ["pages", "contact-form"],
+  "uiModules": ["anim.reveal"],
+  "headerStyle": "classic",
+  "footerStyle": "columns",
+  "heroStyle": "waves",
+  "branding": {
+    "title": "EN Brand Name",
+    "tagline": "English tagline here",
+    "titleFa": "برند فارسی",
+    "taglineFa": "شعار فارسی اینجا"
+  }
+}

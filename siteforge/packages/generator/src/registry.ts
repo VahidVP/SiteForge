@@ -27,13 +27,60 @@ export const UI_MODULES: UiModuleInfo[] = [
   { id: 'anim.marquee', label: 'Ticker Strip', description: 'Infinite scrolling text ribbon under the hero.' }
 ];
 
+/**
+ * Single source of truth for template palettes.
+ * The generated site's `themes.css` is rendered from these values (see themes.css.hbs)
+ * and the Studio's live preview consumes them via /api/catalog — keep them identical.
+ */
 export const TEMPLATES: Catalog['templates'] = [
-  { id: 'midnight', label: 'Midnight', description: 'Deep dark with violet glow — tech and startups.', swatchBg: '#0b1020', swatchAccent: '#7c5cff' },
-  { id: 'paper', label: 'Paper', description: 'Warm light, editorial serif — writers and portfolios.', swatchBg: '#faf6ef', swatchAccent: '#c2410c' },
-  { id: 'sunset', label: 'Sunset', description: 'Colorful purple with orange-pink energy — bold brands.', swatchBg: '#170f2b', swatchAccent: '#ff7a59' },
-  { id: 'forest', label: 'Forest', description: 'Calm deep green — organic shops and wellness.', swatchBg: '#0c1512', swatchAccent: '#34d399' },
-  { id: 'mono', label: 'Mono', description: 'Stark black on white minimalism — designers.', swatchBg: '#ffffff', swatchAccent: '#111111' },
-  { id: 'ocean', label: 'Ocean', description: 'Friendly light blue — corporate and business.', swatchBg: '#eaf4fb', swatchAccent: '#0369a1' }
+  {
+    id: 'midnight', label: 'Midnight', description: 'Deep dark with violet glow — tech and startups.', swatchBg: '#0b1020', swatchAccent: '#7c5cff',
+    theme: {
+      bg: '#0b1020', bgSoft: '#111731', surface: 'rgba(255,255,255,0.045)', surfaceStrong: 'rgba(255,255,255,0.09)', border: 'rgba(255,255,255,0.09)',
+      text: '#e8ebf5', muted: '#9aa3bd', accent: '#7c5cff', accent2: '#22d3ee', accentContrast: '#fff',
+      fontHead: "'Sora', system-ui, sans-serif", fontBody: "'Inter', system-ui, sans-serif", glowOpacity: 0.32
+    }
+  },
+  {
+    id: 'paper', label: 'Paper', description: 'Warm light, editorial serif — writers and portfolios.', swatchBg: '#faf6ef', swatchAccent: '#c2410c',
+    theme: {
+      bg: '#faf6ef', bgSoft: '#f1eadd', surface: 'rgba(28,25,23,0.035)', surfaceStrong: 'rgba(28,25,23,0.07)', border: 'rgba(28,25,23,0.12)',
+      text: '#1c1917', muted: '#6b6157', accent: '#c2410c', accent2: '#a16207', accentContrast: '#fff',
+      fontHead: "'Lora', Georgia, serif", fontBody: "'Nunito', system-ui, sans-serif", glowOpacity: 0.16
+    }
+  },
+  {
+    id: 'sunset', label: 'Sunset', description: 'Colorful purple with orange-pink energy — bold brands.', swatchBg: '#170f2b', swatchAccent: '#ff7a59',
+    theme: {
+      bg: '#170f2b', bgSoft: '#221540', surface: 'rgba(255,255,255,0.05)', surfaceStrong: 'rgba(255,255,255,0.1)', border: 'rgba(255,160,120,0.18)',
+      text: '#fdf3ec', muted: '#c4a8c9', accent: '#ff7a59', accent2: '#ff4d9d', accentContrast: '#2b0f05',
+      fontHead: "'Manrope', system-ui, sans-serif", fontBody: "'Manrope', system-ui, sans-serif", glowOpacity: 0.42
+    }
+  },
+  {
+    id: 'forest', label: 'Forest', description: 'Calm deep green — organic shops and wellness.', swatchBg: '#0c1512', swatchAccent: '#34d399',
+    theme: {
+      bg: '#0c1512', bgSoft: '#12211c', surface: 'rgba(180,240,210,0.05)', surfaceStrong: 'rgba(180,240,210,0.1)', border: 'rgba(140,220,180,0.14)',
+      text: '#e7f3ec', muted: '#93ab9f', accent: '#34d399', accent2: '#a3e635', accentContrast: '#04281a',
+      fontHead: "'Sora', system-ui, sans-serif", fontBody: "'Inter', system-ui, sans-serif", glowOpacity: 0.26
+    }
+  },
+  {
+    id: 'mono', label: 'Mono', description: 'Stark black on white minimalism — designers.', swatchBg: '#ffffff', swatchAccent: '#111111',
+    theme: {
+      bg: '#ffffff', bgSoft: '#f4f4f5', surface: 'rgba(0,0,0,0.03)', surfaceStrong: 'rgba(0,0,0,0.06)', border: 'rgba(0,0,0,0.14)',
+      text: '#111111', muted: '#6d6d72', accent: '#111111', accent2: '#6d6d72', accentContrast: '#ffffff',
+      fontHead: "'Space Grotesk', system-ui, sans-serif", fontBody: "'Space Grotesk', system-ui, sans-serif", glowOpacity: 0.07
+    }
+  },
+  {
+    id: 'ocean', label: 'Ocean', description: 'Friendly light blue — corporate and business.', swatchBg: '#eaf4fb', swatchAccent: '#0369a1',
+    theme: {
+      bg: '#eaf4fb', bgSoft: '#dcecf7', surface: 'rgba(3,60,98,0.05)', surfaceStrong: 'rgba(3,60,98,0.09)', border: 'rgba(3,60,98,0.15)',
+      text: '#0b2439', muted: '#4a6e88', accent: '#0369a1', accent2: '#f59e0b', accentContrast: '#ffffff',
+      fontHead: "'Lora', Georgia, serif", fontBody: "'Nunito', system-ui, sans-serif", glowOpacity: 0.2
+    }
+  }
 ];
 
 export const LANGUAGES: Catalog['languages'] = [

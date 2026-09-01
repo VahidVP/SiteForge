@@ -82,11 +82,17 @@ export default function Hero({
   if (style === 'waves') {
     return (
       <section className="hero hero-waves">
-        <Reveal className="hero-bg">
-          <div className="aurora-wrap">
-            <div className={'hero-glow hero-glow-a' + (site.aurora ? ' anim-glow' : '')} />
-          </div>
-        </Reveal>
+        {/* The blurred glows belong to the aurora/glow-center look — rendering them
+            unconditionally made the waves hero show two hero styles stacked on
+            top of each other. Only render them when aurora is enabled, exactly
+            like the Studio's live preview does. */}
+        {site.aurora ? (
+          <Reveal className="hero-bg">
+            <div className="aurora-wrap">
+              <div className="hero-glow hero-glow-a anim-glow" />
+            </div>
+          </Reveal>
+        ) : null}
         <Reveal>
           <span className="kicker">{copy.heroKicker}</span>
           <h1>{title}</h1>

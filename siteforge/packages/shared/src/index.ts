@@ -51,12 +51,30 @@ export interface UiModuleInfo {
   description: string;
 }
 
+export interface TemplateTheme {
+  bg: string;
+  bgSoft: string;
+  surface: string;
+  surfaceStrong: string;
+  border: string;
+  text: string;
+  muted: string;
+  accent: string;
+  accent2: string;
+  accentContrast: string;
+  fontHead: string;
+  fontBody: string;
+  glowOpacity: number;
+}
+
 export interface TemplateInfo {
   id: TemplateId;
   label: string;
   description: string;
   swatchBg: string;
   swatchAccent: string;
+  /** Exact CSS-variable palette emitted into the generated site's themes.css — single source of truth. */
+  theme: TemplateTheme;
 }
 
 export interface StyleOption {

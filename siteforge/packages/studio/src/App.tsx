@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { Backend, Blueprint, SiteType } from '@siteforge/shared'
 import type { FooterStyle, HeaderStyle, HeroStyle, TemplateId } from '@siteforge/shared'
 
@@ -8,6 +8,7 @@ type HeroId = HeroStyle
 import { fetchCatalog, generateSite } from './api'
 import { Steps } from './components/Steps'
 import { Toggle } from './components/Toggle'
+import { LivePreview } from './components/LivePreview'
 import { studioT } from './studioI18n'
 
 const SITE_ICONS: Record<SiteType, string> = { personal: '👤', business: '🏢', shop: '🛍️' }
@@ -59,9 +60,27 @@ export default function App() {
 
   const STEP_LABELS = [t('w.template'), t('w.design'), t('w.stack'), t('w.identity'), t('w.create')]
 
-  useEffect(() => {
-    fetchCatalog().then(setCatalog).catch(err => setLoadError(err instanceof Error ? err.message : String(err)))
+  // Loading the catalog retries with backoff: the generator API (vite-proxied to :4000)
+  // can briefly reset connections while it restarts (ECONNRESET), and a single-shot
+  // fetch used to leave the whole studio on a dead-end error screen with no way back.
+  const retries = useRef(0)
+  const loadCatalog = useCallback(async () => {
+    try {
+      const c = await fetchCatalog()
+      setCatalog(c)
+    } catch (err) {
+      if (retries.current < 4) {
+        retries.current += 1
+        window.setTimeout(() => void loadCatalog(), 350 * retries.current)
+      } else {
+        setLoadError(err instanceof Error ? err.message : String(err))
+      }
+    }
   }, [])
+
+  useEffect(() => {
+    void loadCatalog()
+  }, [loadCatalog])
 
   useEffect(() => {
     document.documentElement.lang = studioLang
@@ -75,6 +94,9 @@ export default function App() {
     setModules(preset.modules)
     setUiModules(preset.uiModules)
     setTemplate(preset.defaultTemplate)
+    setHeaderStyle(preset.headerStyle)
+    setFooterStyle(preset.footerStyle)
+    setHeroStyle(preset.heroStyle)
     if (!title.trim()) setTitle(preset.defaultTitle)
     if (!tagline.trim()) setTagline(preset.defaultTagline)
   }
@@ -182,7 +204,17 @@ export default function App() {
             {studioLang === 'en' ? 'فا' : 'EN'}
           </button>
         </header>
-        <main className="container"><div className="card error-card">{loadError}</div></main>
+        <main className="container">
+          <div className="card error-card">
+            {loadError}
+            <div className="error-retry">
+              <button type="button" className="btn btn-primary" onClick={() => { retries.current = 0; setLoadError(null); void loadCatalog() }}>
+                {t('w.retry')}
+              </button>
+              <span className="muted">{t('w.retryHint')}</span>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -244,6 +276,32 @@ export default function App() {
       <main className="container">
         <Steps labels={STEP_LABELS} current={step} />
 
+        <div className="wizard-grid">
+          <aside className="wizard-aside">
+            <LivePreview
+              catalog={catalog}
+              siteType={siteType}
+              template={template}
+              language={language}
+              bilingual={bilingual}
+              headerStyle={headerStyle}
+              footerStyle={footerStyle}
+              heroStyle={heroStyle}
+              heroImage={heroImage}
+              modules={modules}
+              uiModules={uiModules}
+              title={title}
+              tagline={tagline}
+              titleFa={titleFa}
+              taglineFa={taglineFa}
+              logo={logo}
+              logoMode={logoMode}
+              eyebrow={t('w.livePreview')}
+              hint={t('w.livePreviewHint')}
+            />
+          </aside>
+
+          <div className="wizard-main">
         {step === 0 && (
           <section>
             <h2>{t('w.whatKind')}</h2>
@@ -427,14 +485,26 @@ export default function App() {
             <div className="card form-card">
               {bilingual ? (
                 <>
-                  <label className="field"><span>{t('w.siteNameEn')}</span>
-                    <input value={title} dir="ltr" onChange={event => handleTitleChange(event.target.value)} /></label>
-                  <label className="field"><span>{t('w.siteNameFa')}</span>
-                    <input value={titleFa} dir="rtl" onChange={event => setTitleFa(event.target.value)} /></label>
-                  <label className="field"><span>{t('w.taglineEn')}</span>
-                    <input value={tagline} dir="ltr" onChange={event => setTagline(event.target.value)} /></label>
-                  <label className="field"><span>{t('w.taglineFa')}</span>
-                    <input value={taglineFa} dir="rtl" onChange={event => setTaglineFa(event.target.value)} /></label>
+                  {/* Primary language fields come first so the Farsi fields are not
+                      mistaken for the English ones (and vice versa) when the site's
+                      primary language is Farsi. */}
+                  {(language === 'fa'
+                    ? [
+                        { value: titleFa, set: setTitleFa, label: t('w.siteNameFa'), dir: 'rtl' },
+                        { value: title, set: handleTitleChange, label: t('w.siteNameEn'), dir: 'ltr' },
+                        { value: taglineFa, set: setTaglineFa, label: t('w.taglineFa'), dir: 'rtl' },
+                        { value: tagline, set: setTagline, label: t('w.taglineEn'), dir: 'ltr' }
+                      ]
+                    : [
+                        { value: title, set: handleTitleChange, label: t('w.siteNameEn'), dir: 'ltr' },
+                        { value: titleFa, set: setTitleFa, label: t('w.siteNameFa'), dir: 'rtl' },
+                        { value: tagline, set: setTagline, label: t('w.taglineEn'), dir: 'ltr' },
+                        { value: taglineFa, set: setTaglineFa, label: t('w.taglineFa'), dir: 'rtl' }
+                      ]
+                  ).map(field => (
+                    <label className="field" key={field.label}><span>{field.label}</span>
+                      <input value={field.value} dir={field.dir} onChange={event => field.set(event.target.value)} /></label>
+                  ))}
                 </>
               ) : (
                 <>
@@ -526,6 +596,8 @@ export default function App() {
             <button type="button" className="btn btn-primary" onClick={() => setStep(s => s + 1)} disabled={!canNext}>{t('w.next')}</button>
           ) : null}
         </footer>
+          </div>
+        </div>
       </main>
     </div>
   )
