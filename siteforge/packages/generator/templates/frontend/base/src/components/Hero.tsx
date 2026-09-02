@@ -97,20 +97,11 @@ export default function Hero({
             <Link to={ctaTo} className="btn btn-primary btn-lg">{ctaLabel}</Link>
           ) : null}
         </Reveal>
-        {/* Full-width animated wave backgrounds. Three stacked SVG layers roll at
-            slightly different speeds so the hero's bottom edge reads as live
-            water rather than a static strip. */}
-        <div className="wave-layer" aria-hidden="true">
-          <svg className="wave-svg wave-svg-1" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path d="M0,60 C240,0 480,120 720,60 C960,0 1200,120 1440,60 L1440,120 L0,120 Z" />
-          </svg>
-          <svg className="wave-svg wave-svg-2" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" />
-          </svg>
-          <svg className="wave-svg wave-svg-3" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path d="M0,55 Q360,10 720,55 T1440,55 L1440,120 L0,120 Z" />
-          </svg>
-        </div>
+        {/* Rotating waves along the hero's base — the exact technique the wizard's
+            live preview uses (wide rounded bars spinning about centres just below
+            the hero edge), scaled up for the full-size page. */}
+        <div className="wave wave-a" aria-hidden="true" />
+        <div className="wave wave-b" aria-hidden="true" />
       </section>
     )
   }

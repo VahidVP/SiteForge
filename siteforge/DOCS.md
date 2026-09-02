@@ -161,6 +161,11 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-01 — Waves hero animation now matches the wizard preview (final)
+
+- **Follow-up to the waves fix below:** the first attempt (three drifting SVG layers) placed the waves correctly at the hero's base but the ±14px drift was imperceptible, so the waves read as static. The user pointed out the **wizard live preview animates the same style perfectly** — so the generated hero now uses the preview's exact technique, ported 1:1: two wide rounded bars (`inset-inline:-30%`, `border-radius:45%`) spinning about centres just below the hero edge via `wave-spin` (14s / 20s reverse), with the preview's accent/accent-2 mixes at 50% opacity, scaled ×3.33 for the full-size hero (heights 148/168px, bottoms −113/−147px). The hero keeps its `bg → accent` gradient and the copy stays above the waves.
+- **Motion proven by pixel diff:** screenshots of the hero's bottom band 0.9s apart give a **mean abs RGB diff of 5.78** on the generated site — measurably more movement than the wizard preview itself (3.9 measured the same way). Geometry verified at 1400px desktop (waves 2240px = 160% width, caps inside the hero, h1 280px above the wave area, no horizontal overflow) and at 375px mobile (2 waves, full width, no overflow). Fresh `waves-final` generation emits the new markup/CSS; `vite build` clean; no `wave-layer`/`wave-drift` leftovers in templates.
+
 ### 2026-09-01 — Waves hero background fixed
 
 - **The Waves hero no longer renders the waves as a detached/stray strip "under" the section.** Two compounded bugs: (1) the hero had no background of its own (the 2026-08-31 change that removed the aurora/glow layer from the waves hero left it transparent, so it read as bare page colour with a dark band at the bottom), and (2) rotating-`div` shapes sized against the full hero width were so flat their curves were invisible, leaving only stray corners poking through.

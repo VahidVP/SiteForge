@@ -923,49 +923,46 @@ body[data-footer='split'] .footer-col:nth-child(3) { display: none; }
   transition: opacity .3s ease;
 }
 
-/* ——— Waves hero: full-width animated SVG water at the hero's base ——— */
+/* ——— Waves hero: rotating waves at the base (same technique as wizard preview) ——— */
 .hero-waves {
   position: relative;
   padding-bottom: 150px;
   background: linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--accent) 18%, var(--bg)) 100%);
 }
 
-/* hero copy stays above the wave layer */
-.hero-waves > div:not(.wave-layer) {
+/* hero copy stays above the waves */
+.hero-waves > *:not(.hero-bg):not(.wave) {
   position: relative;
   z-index: 2;
 }
 
-.wave-layer {
+.hero-waves .wave {
   position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 120px;
-  overflow: hidden;
+  inset-inline: -30%;
+  border-radius: 45%;
+  animation: wave-spin 14s linear infinite;
   pointer-events: none;
-  z-index: 1;
 }
 
-.wave-layer svg {
-  position: absolute;
-  inset-inline: 0;
-  bottom: -2px;
-  width: 100%;
-  height: 120%;
-  display: block;
+.hero-waves .wave-a {
+  bottom: -113px;
+  height: 148px;
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+  opacity: .5;
 }
 
-.wave-svg-1 { animation: wave-drift 11s ease-in-out infinite alternate; }
-.wave-svg-2 { animation: wave-drift 15s ease-in-out infinite alternate-reverse; }
-.wave-svg-3 { animation: wave-drift 19s ease-in-out infinite alternate; }
+.hero-waves .wave-b {
+  bottom: -147px;
+  height: 168px;
+  background: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  animation-duration: 20s;
+  animation-direction: reverse;
+  opacity: .5;
+}
 
-.wave-svg-1 path { fill: color-mix(in srgb, var(--accent) 32%, var(--bg)); opacity: .85; }
-.wave-svg-2 path { fill: color-mix(in srgb, var(--accent-2) 22%, var(--bg)); opacity: .7; }
-.wave-svg-3 path { fill: var(--bg); }
-
-@keyframes wave-drift {
-  from { transform: translateX(-14px); }
-  to { transform: translateX(14px); }
+@keyframes wave-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .hero-gridbg { position: relative; overflow: hidden; }
