@@ -161,6 +161,12 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-03 — Live preview now shows all 10 animations faithfully
+
+- **The wizard's browser mockup ignored or faked most animation toggles.** Audit of `LivePreview.tsx` vs the 10 `anim.*` toggles: Scroll Reveal had its `fade-up` baked into `.pv-card` CSS so OFF looked identical to ON and toggling never replayed anything; 3D Tilt and Magnetic Buttons were not represented at all; Image Zoom only set a `transition` with no hover rule, so nothing ever zoomed; Button Shine rendered a placeholder pill saying "Button shine" instead of a sheen on the actual CTA; Word Cascade ran once on mount and toggling the checkbox did nothing visible.
+- **Fix (preview only — generated sites already behaved correctly):** the section replays a staggered `fade-up` entrance only when Scroll Reveal is on *and* the section scrolled into view (new `useVisible` hook, `opacity: 0` before that, fully static when off); cards tilt toward the cursor in 3D when 3D Tilt is on (float yields to tilt, same as the real site); the hero CTA is a new `PreviewCta` that pulls toward the cursor when Magnetic is on and sweeps a real sheen when Shine is on (`pv-pill--shine`, reusing the `shine-sweep` keyframes); thumbnails scale 1.18× on hover when Image Zoom is on (`pv-card--zoom`); cascade words always animate when on — even single-word titles — with toggle-aware keys so flipping any checkbox visibly replays. The baked-in `.pv-card` entrance was removed from CSS so OFF truly means static.
+- **Verification:** new harness `tmp/verify-fix/preview-anim-check.mjs` drives the real wizard in headless Edge and asserts each toggle both ways (computed `animationName`/`transform`, class presence, cursor-driven tilt/pull/zoom, `::after` sheen, zero page errors) — **25/25 passed**. Root `npm run typecheck` + studio `vite build` clean.
+
 ### 2026-09-03 — wwwroot warning fix, hero kicker removed, navbar text slightly bigger
 
 Three user reports from a generated personal/C# site:

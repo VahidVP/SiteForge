@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent } from 'react'
 import type {
   Catalog,
@@ -290,22 +290,48 @@ function PreviewNav({
 
 function CascadingTitle({ title, cascade }: { title: string; cascade: boolean }) {
   const words = title.trim().split(/\s+/)
-  if (!cascade || words.length < 2) return <span className="pv-title">{title}</span>
+  if (!cascade) return <span className="pv-title" key={`p-${title}`}>{title}</span>
+  // Keys include the toggle state so flipping the checkbox remounts the words
+  // and the cascade visibly replays (same reason as the section cards below).
   return (
-    <span className="pv-title word-cascade" key={title}>
+    <span className="pv-title word-cascade" key={`c-${title}`}>
       {words.map((w, i) => (
-        <span className="word" key={`${title}-${i}`} style={{ animationDelay: `${i * 80}ms` }}>{w}</span>
+        <span className="word" key={`c-${title}-${i}`} style={{ animationDelay: `${i * 80}ms` }}>{w}</span>
       ))}
     </span>
   )
 }
 
-function SpotlightHero({ title, tagline, cascade, language, cta }: {
+function PreviewCta({ label, magnetic, shine }: { label: string; magnetic: boolean; shine: boolean }) {
+  function handleMove(e: MouseEvent<HTMLSpanElement>) {
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    const dx = e.clientX - (r.left + r.width / 2)
+    const dy = e.clientY - (r.top + r.height / 2)
+    el.style.transform = `translate(${dx * 0.18}px, ${dy * 0.18}px)`
+  }
+  function handleLeave(e: MouseEvent<HTMLSpanElement>) {
+    e.currentTarget.style.transform = ''
+  }
+  return (
+    <span
+      className={'pv-pill' + (shine ? ' pv-pill--shine' : '')}
+      onMouseMove={magnetic ? handleMove : undefined}
+      onMouseLeave={magnetic ? handleLeave : undefined}
+    >
+      {label}
+    </span>
+  )
+}
+
+function SpotlightHero({ title, tagline, cascade, language, cta, magnetic, shine }: {
   title: string
   tagline?: string
   cascade: boolean
   language: Language
   cta?: string
+  magnetic: boolean
+  shine: boolean
 }) {
   const [spot, setSpot] = useState({ x: 65, y: 40 })
   function move(e: MouseEvent<HTMLDivElement>) {
@@ -317,18 +343,18 @@ function SpotlightHero({ title, tagline, cascade, language, cta }: {
       <div className="pv-hero-copy">
         <CascadingTitle title={title} cascade={cascade} />
         {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-        <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
+        <PreviewCta label={cta || (language === 'fa' ? 'شروع کن' : 'Get started')} magnetic={magnetic} shine={shine} />
       </div>
     </div>
   )
 }
 
-function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language, cta?: string) {
+function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language, cta?: string, magnetic = false, shine = false) {
   return (
     <div className="pv-hero-copy">
       <CascadingTitle title={title} cascade={cascade} />
       {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-      <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
+      <PreviewCta label={cta || (language === 'fa' ? 'شروع کن' : 'Get started')} magnetic={magnetic} shine={shine} />
     </div>
   )
 }
@@ -344,6 +370,8 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
 }) {
   const cascade = uiModules.includes('anim.text-reveal')
   const aurora = uiModules.includes('anim.aurora')
+  const magnetic = uiModules.includes('anim.magnetic')
+  const shine = uiModules.includes('anim.shine')
   const aura = aurora ? (
     <span className="pv-aurora">
       <span className="pv-aurora-a" />
@@ -359,7 +387,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
           <div className="pv-hero-copy">
             <CascadingTitle title={title} cascade={cascade} />
             {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-            <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
+            <PreviewCta label={cta || (language === 'fa' ? 'شروع کن' : 'Get started')} magnetic={magnetic} shine={shine} />
           </div>
           <span className={'pv-art' + (heroImage ? '' : ' pv-art--plain')}>
             <span className="pv-art-orb pv-art-orb-a" />
@@ -369,14 +397,14 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         </div>
       )
     case 'spotlight':
-      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} cta={cta} />
+      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} cta={cta} magnetic={magnetic} shine={shine} />
     case 'waves':
       return (
         <div className="pv-hero pv-hero--waves">
           {aura}
           <span className="pv-wave pv-wave-a" />
           <span className="pv-wave pv-wave-b" />
-          {heroCopy(title, tagline, cascade, language, cta)}
+          {heroCopy(title, tagline, cascade, language, cta, magnetic, shine)}
         </div>
       )
     case 'grid':
@@ -384,7 +412,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         <div className="pv-hero pv-hero--grid">
           {aura}
           <span className="pv-floor" />
-          {heroCopy(title, tagline, cascade, language, cta)}
+          {heroCopy(title, tagline, cascade, language, cta, magnetic, shine)}
         </div>
       )
     default:
@@ -393,7 +421,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
           {aura}
           <span className="pv-blob pv-blob-a" />
           <span className="pv-blob pv-blob-b" />
-          {heroCopy(title, tagline, cascade, language, cta)}
+          {heroCopy(title, tagline, cascade, language, cta, magnetic, shine)}
         </div>
       )
   }
@@ -418,6 +446,28 @@ function PreviewMarquee({ language }: { language: Language }) {
 
 /* ————— content section ————— */
 
+function useVisible<T extends HTMLElement>(threshold = 0.2) {
+  const ref = useRef<T | null>(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true)
+      return
+    }
+    const obs = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting) setVisible(true)
+      },
+      { threshold }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return { ref, visible }
+}
+
 function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
   siteType: SiteType | null
   uiModules: string[]
@@ -426,32 +476,72 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
   heading?: string
 }) {
   const shop = siteType === 'shop'
+  const reveal = uiModules.includes('anim.reveal')
   const lift = uiModules.includes('anim.hover-lift')
-  const float = uiModules.includes('anim.float')
+  const tilt = uiModules.includes('anim.tilt')
+  const float = uiModules.includes('anim.float') && !tilt
   const zoom = uiModules.includes('anim.zoom')
-  const shine = uiModules.includes('anim.shine')
+  const { ref, visible } = useVisible<HTMLDivElement>()
   const sectionLabel = heading?.trim() || SECTION_HEADING[siteType ?? 'personal'][language]
   const radius = cardStyle === 'soft' ? 16 : cardStyle === 'sharp' ? 4 : 9
   const count = shop ? 4 : 3
   const names = PRODUCT_NAMES[language]
   const prices = PRODUCT_PRICES[language]
+
+  // Entrance (+ optional float follow-through) per card. When reveal is on but
+  // the section hasn't scrolled into view yet, cards stay invisible — exactly
+  // like the generated site's scroll reveal. Keyed on the toggle set below so
+  // flipping a checkbox visibly replays the entrance.
+  function cardAnim(i: number): CSSProperties {
+    if (!reveal && !float) return {}
+    if (reveal && !visible) return { opacity: 0 }
+    const parts: string[] = []
+    const delays: string[] = []
+    if (reveal) {
+      parts.push('fade-up .55s cubic-bezier(.22,.61,.36,1) both')
+      delays.push(`${i * 90}ms`)
+    }
+    if (float) {
+      parts.push('float-y 5s ease-in-out infinite')
+      delays.push(reveal ? `${600 + i * 90}ms` : `${i * 500}ms`)
+    }
+    return { animation: parts.join(', '), animationDelay: delays.join(', ') }
+  }
+
+  function handleTiltMove(e: MouseEvent<HTMLDivElement>) {
+    if (!tilt) return
+    const card = (e.target as HTMLElement).closest('.pv-card') as HTMLElement | null
+    if (!card) return
+    const r = card.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width - 0.5
+    const py = (e.clientY - r.top) / r.height - 0.5
+    card.style.transform = `perspective(500px) rotateY(${px * 12}deg) rotateX(${py * -12}deg)`
+  }
+
+  function handleTiltLeave(e: MouseEvent<HTMLDivElement>) {
+    e.currentTarget.querySelectorAll('.pv-card').forEach(c => {
+      ;(c as HTMLElement).style.transform = ''
+    })
+  }
+
   return (
-    <div className="pv-section">
+    <div className="pv-section" ref={ref}>
       <span className="pv-section-label">{sectionLabel}</span>
-      <div className={shop ? 'pv-cards pv-cards--shop' : 'pv-cards'}>
+      <div
+        className={(shop ? 'pv-cards pv-cards--shop' : 'pv-cards') + (tilt ? ' pv-cards--tilt' : '')}
+        key={uiModules.join('|')}
+        onMouseMove={tilt ? handleTiltMove : undefined}
+        onMouseLeave={tilt ? handleTiltLeave : undefined}
+      >
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className={lift ? 'pv-card pv-card--lift' : 'pv-card'}
-            style={{
-              animationDelay: `${i * 90}ms`,
-              borderRadius: radius,
-              ...(float ? { animation: `float-y 5s ease-in-out ${i * 0.5}s infinite` } : {})
-            }}
+            className={'pv-card' + (lift ? ' pv-card--lift' : '') + (zoom ? ' pv-card--zoom' : '')}
+            style={{ borderRadius: radius, ...cardAnim(i) }}
           >
             {shop ? (
               <>
-                <span className="pv-thumb" style={{ ...(zoom ? { transition: 'transform .4s ease' } : {}) }} />
+                <span className="pv-thumb" />
                 <b className="pv-name">{names[i]}</b>
                 <span className="pv-price">{prices[i]}</span>
               </>
@@ -464,7 +554,6 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
           </div>
         ))}
       </div>
-      {shine ? <span className="pv-pill" style={{ marginTop: 8, position: 'relative', overflow: 'hidden' }}>{language === 'fa' ? 'درخشش دکمه' : 'Button shine'}</span> : null}
     </div>
   )
 }

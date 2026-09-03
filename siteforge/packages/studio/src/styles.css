@@ -973,6 +973,8 @@ code {
 }
 
 .pv-pill {
+  position: relative;
+  display: inline-block;
   font-size: 0.66rem;
   font-weight: 700;
   color: var(--p-on-accent);
@@ -981,6 +983,25 @@ code {
   border-radius: 999px;
   white-space: nowrap;
   box-shadow: 0 8px 20px color-mix(in srgb, var(--p-accent) 35%, transparent);
+}
+
+/* Button Shine toggle: the sheen sweeps across the hero button, same
+   technique as the generated site (body[data-shine] .btn-primary::after). */
+.pv-pill--shine {
+  overflow: hidden;
+}
+
+.pv-pill--shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  left: -60%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-20deg);
+  animation: shine-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .pv-nav--minimal {
@@ -1278,7 +1299,8 @@ code {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  animation: fade-up 0.6s ease both;
+  /* No baked-in entrance here on purpose: the Scroll Reveal toggle drives the
+     fade-up via inline styles, so OFF really means static. */
 }
 
 .pv-card--lift {
@@ -1289,6 +1311,26 @@ code {
 .pv-card--lift:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 3D Tilt Cards toggle: cursor-tracked tilt is set inline per card; the
+   container just adds perspective and smoothing. */
+.pv-cards--tilt {
+  perspective: 600px;
+}
+
+.pv-cards--tilt .pv-card {
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+/* Image Zoom toggle. */
+.pv-card--zoom .pv-thumb {
+  transition: transform 0.4s ease;
+}
+
+.pv-card--zoom:hover .pv-thumb {
+  transform: scale(1.18);
 }
 
 .pv-thumb {
