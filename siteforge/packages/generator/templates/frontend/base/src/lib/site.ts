@@ -13,6 +13,14 @@ export interface SiteFlags {
   footerStyle: string
   heroStyle: string
   heroImage?: string
+  cardStyle: 'rounded' | 'soft' | 'sharp'
+  contentWidth: 'cozy' | 'wide'
+  heroKicker?: string
+  heroKickerFa?: string
+  ctaLabel?: string
+  ctaLabelFa?: string
+  cardsTitle?: string
+  cardsTitleFa?: string
   isPersonal: boolean
   isBusiness: boolean
   isShop: boolean
@@ -28,6 +36,9 @@ export interface SiteFlags {
   magnetic: boolean
   aurora: boolean
   marquee: boolean
+  float: boolean
+  zoom: boolean
+  shine: boolean
 }
 
 const raw = (window as unknown as { __SITE__?: Record<string, unknown> }).__SITE__ as SiteFlags & Record<string, unknown> | undefined
@@ -47,6 +58,14 @@ export const site: SiteFlags = {
   footerStyle: (raw?.footerStyle as string) ?? 'columns',
   heroStyle: (raw?.heroStyle as string) ?? 'glow-center',
   heroImage: (raw?.heroImage as string) ?? '',
+  cardStyle: ((raw?.cardStyle as string) === 'soft' || (raw?.cardStyle as string) === 'sharp' ? (raw?.cardStyle as SiteFlags['cardStyle']) : 'rounded'),
+  contentWidth: ((raw?.contentWidth as string) === 'wide' ? 'wide' : 'cozy'),
+  heroKicker: (raw?.heroKicker as string) ?? '',
+  heroKickerFa: (raw?.heroKickerFa as string) ?? '',
+  ctaLabel: (raw?.ctaLabel as string) ?? '',
+  ctaLabelFa: (raw?.ctaLabelFa as string) ?? '',
+  cardsTitle: (raw?.cardsTitle as string) ?? '',
+  cardsTitleFa: (raw?.cardsTitleFa as string) ?? '',
   isPersonal: ((raw?.siteType as string) ?? 'personal') === 'personal',
   isBusiness: (raw?.siteType as string) === 'business',
   isShop: (raw?.siteType as string) === 'shop',
@@ -61,7 +80,10 @@ export const site: SiteFlags = {
   tilt: Boolean((raw as Record<string, unknown>)?.tilt),
   magnetic: Boolean((raw as Record<string, unknown>)?.magnetic),
   aurora: Boolean((raw as Record<string, unknown>)?.aurora),
-  marquee: Boolean((raw as Record<string, unknown>)?.marquee)
+  marquee: Boolean((raw as Record<string, unknown>)?.marquee),
+  float: Boolean((raw as Record<string, unknown>)?.float),
+  zoom: Boolean((raw as Record<string, unknown>)?.zoom),
+  shine: Boolean((raw as Record<string, unknown>)?.shine)
 }
 
 export function siteTitle(lang: string): string {
@@ -72,4 +94,30 @@ export function siteTitle(lang: string): string {
 export function siteTagline(lang: string): string {
   if (lang === 'fa' && site.taglineFa && site.taglineFa.trim()) return site.taglineFa
   return site.tagline
+}
+
+/** Wizard "Website text" overrides with fallback to the per-type defaults. */
+export function siteHeroKicker(lang: string, fallback: string): string {
+  if (lang === 'fa' && site.heroKickerFa && site.heroKickerFa.trim()) return site.heroKickerFa
+  if (lang !== 'fa' && site.heroKicker && site.heroKicker.trim()) return site.heroKicker
+  // Cross-fallback so a single-language override still shows in the other lang.
+  if (site.heroKickerFa && site.heroKickerFa.trim()) return lang === 'fa' ? site.heroKickerFa : (site.heroKicker?.trim() ? site.heroKicker : site.heroKickerFa)
+  if (site.heroKicker && site.heroKicker.trim()) return site.heroKicker
+  return fallback
+}
+
+export function siteCtaLabel(lang: string, fallback: string): string {
+  if (lang === 'fa' && site.ctaLabelFa && site.ctaLabelFa.trim()) return site.ctaLabelFa
+  if (lang !== 'fa' && site.ctaLabel && site.ctaLabel.trim()) return site.ctaLabel
+  if (site.ctaLabelFa && site.ctaLabelFa.trim()) return lang === 'fa' ? site.ctaLabelFa : (site.ctaLabel?.trim() ? site.ctaLabel : site.ctaLabelFa)
+  if (site.ctaLabel && site.ctaLabel.trim()) return site.ctaLabel
+  return fallback
+}
+
+export function siteCardsTitle(lang: string, fallback: string): string {
+  if (lang === 'fa' && site.cardsTitleFa && site.cardsTitleFa.trim()) return site.cardsTitleFa
+  if (lang !== 'fa' && site.cardsTitle && site.cardsTitle.trim()) return site.cardsTitle
+  if (site.cardsTitleFa && site.cardsTitleFa.trim()) return lang === 'fa' ? site.cardsTitleFa : (site.cardsTitle?.trim() ? site.cardsTitle : site.cardsTitleFa)
+  if (site.cardsTitle && site.cardsTitle.trim()) return site.cardsTitle
+  return fallback
 }

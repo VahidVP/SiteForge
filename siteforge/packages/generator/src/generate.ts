@@ -26,6 +26,14 @@ export interface Ctx {
   footerStyle: string;
   heroStyle: string;
   heroImage: string;
+  cardStyle: string;
+  contentWidth: string;
+  heroKicker: string;
+  heroKickerFa: string;
+  ctaLabel: string;
+  ctaLabelFa: string;
+  cardsTitle: string;
+  cardsTitleFa: string;
   isFa: boolean;
   django: boolean;
   dotnet: boolean;
@@ -44,6 +52,9 @@ export interface Ctx {
   fMagnetic: boolean;
   fAurora: boolean;
   fMarquee: boolean;
+  fFloat: boolean;
+  fZoom: boolean;
+  fShine: boolean;
   /** All template palettes — consumed by themes.css.hbs so emitted CSS matches the registry. */
   templates: Array<{ id: string; theme: TemplateTheme }>;
 }
@@ -68,6 +79,14 @@ export function buildCtx(bp: Blueprint): Ctx {
     footerStyle: bp.footerStyle ?? 'columns',
     heroStyle: bp.heroStyle ?? 'glow-center',
     heroImage: bp.heroImage ?? '',
+    cardStyle: bp.cardStyle ?? 'rounded',
+    contentWidth: bp.contentWidth ?? 'cozy',
+    heroKicker: bp.content?.heroKicker ?? '',
+    heroKickerFa: bp.content?.heroKickerFa ?? '',
+    ctaLabel: bp.content?.ctaLabel ?? '',
+    ctaLabelFa: bp.content?.ctaLabelFa ?? '',
+    cardsTitle: bp.content?.cardsTitle ?? '',
+    cardsTitleFa: bp.content?.cardsTitleFa ?? '',
     isFa: bp.language === 'fa',
     django: bp.backend === 'django',
     dotnet: bp.backend === 'dotnet',
@@ -86,6 +105,9 @@ export function buildCtx(bp: Blueprint): Ctx {
     fMagnetic: ui('anim.magnetic'),
     fAurora: ui('anim.aurora'),
     fMarquee: ui('anim.marquee'),
+    fFloat: ui('anim.float'),
+    fZoom: ui('anim.zoom'),
+    fShine: ui('anim.shine'),
     templates: TEMPLATES.map(t => ({ id: t.id, theme: t.theme }))
   };
 }

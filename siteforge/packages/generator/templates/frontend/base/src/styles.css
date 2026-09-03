@@ -45,6 +45,22 @@ code {
   margin-inline: auto;
 }
 
+/* Wizard "Page width" control: cozy (default reading width) vs wide. */
+body[data-width='wide'] .container {
+  width: min(1320px, calc(100% - 40px));
+}
+
+/* Wizard "Card style" control: rounded default, soft extra-round, sharp square. */
+body[data-cards='soft'] {
+  --radius: 24px;
+  --radius-sm: 16px;
+}
+
+body[data-cards='sharp'] {
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+
 .page-narrow {
   width: min(640px, calc(100% - 40px));
   margin-inline: auto;
@@ -1088,6 +1104,7 @@ background: rgba(0, 0, 0, .82);
 }
 
 .media-item {
+  position: relative;
   padding: 0;
   border: 2px solid var(--border);
   border-radius: 10px;

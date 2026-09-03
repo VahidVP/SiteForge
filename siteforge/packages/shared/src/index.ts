@@ -1,8 +1,20 @@
 export type Backend = 'django' | 'dotnet';
 export type SiteType = 'personal' | 'business' | 'shop';
 export type ModuleStatus = 'available' | 'soon';
-export type TemplateId = 'midnight' | 'paper' | 'sunset' | 'forest' | 'mono' | 'ocean';
+export type TemplateId = 'midnight' | 'paper' | 'sunset' | 'forest' | 'mono' | 'ocean' | 'blossom' | 'citrus' | 'obsidian';
 export type Language = 'en' | 'fa';
+
+export type CardStyle = 'rounded' | 'soft' | 'sharp';
+export type ContentWidth = 'cozy' | 'wide';
+
+export interface SiteContent {
+  heroKicker?: string;
+  heroKickerFa?: string;
+  ctaLabel?: string;
+  ctaLabelFa?: string;
+  cardsTitle?: string;
+  cardsTitleFa?: string;
+}
 
 export type LogoMode = 'text' | 'image' | 'both';
 
@@ -33,6 +45,9 @@ export interface Blueprint {
   footerStyle: FooterStyle;
   heroStyle: HeroStyle;
   heroImage?: string;
+  cardStyle?: CardStyle;
+  contentWidth?: ContentWidth;
+  content?: SiteContent;
   branding: Branding;
   adminAccessCode?: string;
 }

@@ -24,7 +24,10 @@ export const UI_MODULES: UiModuleInfo[] = [
   { id: 'anim.tilt', label: '3D Tilt Cards', description: 'Cards tilt toward the cursor in 3D like high-end portfolios.' },
   { id: 'anim.magnetic', label: 'Magnetic Buttons', description: 'Buttons are gently pulled toward the cursor.' },
   { id: 'anim.aurora', label: 'Aurora Glow', description: 'Slow-moving gradient aurora behind the hero (Stripe-style).' },
-  { id: 'anim.marquee', label: 'Ticker Strip', description: 'Infinite scrolling text ribbon under the hero.' }
+  { id: 'anim.marquee', label: 'Ticker Strip', description: 'Infinite scrolling text ribbon under the hero.' },
+  { id: 'anim.float', label: 'Float Softly', description: 'Stat cards gently bob up and down, alive but calm.' },
+  { id: 'anim.zoom', label: 'Image Zoom', description: 'Portfolio and product photos smoothly zoom on hover.' },
+  { id: 'anim.shine', label: 'Button Shine', description: 'A light sheen sweeps across main buttons on hover.' }
 ];
 
 /**
@@ -79,6 +82,30 @@ export const TEMPLATES: Catalog['templates'] = [
       bg: '#eaf4fb', bgSoft: '#dcecf7', surface: 'rgba(3,60,98,0.05)', surfaceStrong: 'rgba(3,60,98,0.09)', border: 'rgba(3,60,98,0.15)',
       text: '#0b2439', muted: '#4a6e88', accent: '#0369a1', accent2: '#f59e0b', accentContrast: '#ffffff',
       fontHead: "'Lora', Georgia, serif", fontBody: "'Nunito', system-ui, sans-serif", glowOpacity: 0.2
+    }
+  },
+  {
+    id: 'blossom', label: 'Blossom', description: 'Soft rose pink, warm and friendly — creators and lifestyle.', swatchBg: '#fdf3f6', swatchAccent: '#db2777',
+    theme: {
+      bg: '#fdf3f6', bgSoft: '#f9e2ec', surface: 'rgba(157,23,77,0.05)', surfaceStrong: 'rgba(157,23,77,0.09)', border: 'rgba(157,23,77,0.14)',
+      text: '#431627', muted: '#9a6b7f', accent: '#db2777', accent2: '#8b5cf6', accentContrast: '#ffffff',
+      fontHead: "'Lora', Georgia, serif", fontBody: "'Nunito', system-ui, sans-serif", glowOpacity: 0.18
+    }
+  },
+  {
+    id: 'citrus', label: 'Citrus', description: 'Fresh lime energy on warm white — food, markets, youth brands.', swatchBg: '#fbfde8', swatchAccent: '#65a30d',
+    theme: {
+      bg: '#fbfde8', bgSoft: '#f0f5cf', surface: 'rgba(63,98,18,0.06)', surfaceStrong: 'rgba(63,98,18,0.1)', border: 'rgba(63,98,18,0.16)',
+      text: '#1f2a0b', muted: '#67744a', accent: '#4d7c0f', accent2: '#f59e0b', accentContrast: '#ffffff',
+      fontHead: "'Manrope', system-ui, sans-serif", fontBody: "'Manrope', system-ui, sans-serif", glowOpacity: 0.14
+    }
+  },
+  {
+    id: 'obsidian', label: 'Obsidian', description: 'Pure dark with teal glow — developers and minimal portfolios.', swatchBg: '#06090f', swatchAccent: '#2dd4bf',
+    theme: {
+      bg: '#06090f', bgSoft: '#0c121c', surface: 'rgba(148,197,255,0.06)', surfaceStrong: 'rgba(148,197,255,0.11)', border: 'rgba(148,197,255,0.14)',
+      text: '#e6eef7', muted: '#8b98ab', accent: '#2dd4bf', accent2: '#818cf8', accentContrast: '#05302a',
+      fontHead: "'Space Grotesk', system-ui, sans-serif", fontBody: "'Space Grotesk', system-ui, sans-serif", glowOpacity: 0.3
     }
   }
 ];

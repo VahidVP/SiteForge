@@ -579,12 +579,17 @@ function MediaPicker({ value, onChange, max = 8 }: { value: string[]; onChange: 
   const { t } = useI18n()
   const [media, setMedia] = useState<MediaFile[] | null>(null)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.media.list().then(setMedia).catch(() => setMedia([]))
+    api.media.list().then(setMedia).catch(err => {
+      setMedia([])
+      setError(err instanceof Error ? err.message : 'Could not load images.')
+    })
   }, [])
 
   function toggle(url: string) {
+    setError(null)
     onChange(null === value ? [url] : value.includes(url) ? value.filter(u => u !== url) : [...value, url].slice(0, max))
   }
 
@@ -592,9 +597,14 @@ function MediaPicker({ value, onChange, max = 8 }: { value: string[]; onChange: 
     const files = e.target.files
     if (!files || files.length === 0) return
     setBusy(true)
+    setError(null)
     try {
       const uploaded = (await api.media.upload(files)) || []
-      const urls = uploaded.map(u => u.url)
+      // Be liberal in what we accept: some stacks wrap the urls, some return
+      // plain strings — either way we want thumbnails to appear instantly.
+      const urls = uploaded
+        .map(u => (typeof u === 'string' ? u : u?.url))
+        .filter((u): u is string => typeof u === 'string' && u.length > 0)
       setMedia(prev => {
         const existing = prev ?? []
         const known = new Set(existing.map(m => m.url))
@@ -603,24 +613,46 @@ function MediaPicker({ value, onChange, max = 8 }: { value: string[]; onChange: 
       })
       if (urls.length) onChange([...(value ?? []), ...urls].slice(0, max))
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Upload failed.')
+      setError(err instanceof Error ? err.message : 'Upload failed.')
     } finally {
       setBusy(false)
       e.target.value = ''
     }
   }
 
+  const selected = value ?? []
+
   return (
     <div className="field">
-      <span>{t('admin.gallery')}</span>
+      <span>{t('admin.gallery')} {selected.length ? `(${selected.length}/${max})` : ''}</span>
+      {/* Chosen images — visible immediately so it is obvious the pick worked.
+          The first one becomes the card cover on the portfolio/services pages. */}
+      {selected.length > 0 ? (
+        <div className="media-grid" style={{ marginBottom: 8 }}>
+          {selected.map(url => (
+            <span key={url} className="media-item selected" title={url}>
+              <img src={resolveImageUrl(url)} alt="" loading="lazy" />
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ position: 'absolute', top: 2, insetInlineEnd: 2, padding: '0 6px' }}
+                onClick={() => onChange(selected.filter(u => u !== url))}
+                aria-label={t('admin.removeField')}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="media-grid">
         {(media ?? []).map(file => {
-          const selected = (value ?? []).includes(file.url)
+          const isSelected = selected.includes(file.url)
           return (
             <button
               key={file.url}
               type="button"
-              className={'media-item' + (selected ? ' selected' : '')}
+              className={'media-item' + (isSelected ? ' selected' : '')}
               onClick={() => toggle(file.url)}
               title={file.name}
             >
@@ -629,6 +661,10 @@ function MediaPicker({ value, onChange, max = 8 }: { value: string[]; onChange: 
           )
         })}
       </div>
+      {media !== null && media.length === 0 && selected.length === 0 ? (
+        <p className="muted" style={{ fontSize: '0.85rem', margin: '6px 0 0' }}>{t('admin.noData')}</p>
+      ) : null}
+      {error ? <p className="form-error">{error}</p> : null}
       <label className="btn btn-ghost btn-sm" style={{ marginTop: 8, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
         {busy ? t('admin.uploading') : `⬆ ${t('admin.uploadImages')}`}
         <input type="file" accept="image/webp,image/png,image/jpeg,image/svg+xml,image/gif" multiple hidden onChange={handleUpload} />

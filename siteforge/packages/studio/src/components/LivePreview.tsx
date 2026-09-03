@@ -21,6 +21,14 @@ export interface LivePreviewProps {
   footerStyle: FooterStyle
   heroStyle: HeroStyle
   heroImage: string | null
+  cardStyle?: 'rounded' | 'soft' | 'sharp'
+  contentWidth?: 'cozy' | 'wide'
+  heroKicker?: string
+  heroKickerFa?: string
+  ctaLabel?: string
+  ctaLabelFa?: string
+  cardsTitle?: string
+  cardsTitleFa?: string
   modules: string[]
   uiModules: string[]
   title: string
@@ -212,9 +220,24 @@ export function LivePreview(props: LivePreviewProps) {
         </div>
         <div className="page">
           <PreviewNav headline={brandTitle} siteType={props.siteType} modules={props.modules} language={lang} bilingual={props.bilingual} headerStyle={props.headerStyle} logo={props.logo} logoMode={props.logoMode} />
-          <PreviewHero heroStyle={props.heroStyle} heroImage={props.heroImage} uiModules={props.uiModules} language={lang} title={brandTitle} tagline={tagline} />
+          <PreviewHero
+            heroStyle={props.heroStyle}
+            heroImage={props.heroImage}
+            uiModules={props.uiModules}
+            language={lang}
+            title={brandTitle}
+            tagline={tagline}
+            kicker={(lang === 'fa' ? (props.heroKickerFa?.trim() || props.heroKicker) : (props.heroKicker?.trim() || props.heroKickerFa))?.trim() || undefined}
+            cta={(lang === 'fa' ? (props.ctaLabelFa?.trim() || props.ctaLabel) : (props.ctaLabel?.trim() || props.ctaLabelFa))?.trim() || undefined}
+          />
           {props.uiModules.includes('anim.marquee') ? <PreviewMarquee language={lang} /> : null}
-          <PreviewSection siteType={props.siteType} uiModules={props.uiModules} language={lang} />
+          <PreviewSection
+            siteType={props.siteType}
+            uiModules={props.uiModules}
+            language={lang}
+            cardStyle={props.cardStyle}
+            heading={(lang === 'fa' ? (props.cardsTitleFa?.trim() || props.cardsTitle) : (props.cardsTitle?.trim() || props.cardsTitleFa))?.trim() || undefined}
+          />
           <PreviewFooter footerStyle={props.footerStyle} language={lang} title={brandTitle} tagline={tagline} />
         </div>
       </div>
@@ -280,11 +303,13 @@ function CascadingTitle({ title, cascade }: { title: string; cascade: boolean })
   )
 }
 
-function SpotlightHero({ title, tagline, cascade, language }: {
+function SpotlightHero({ title, tagline, cascade, language, kicker, cta }: {
   title: string
   tagline?: string
   cascade: boolean
   language: Language
+  kicker?: string
+  cta?: string
 }) {
   const [spot, setSpot] = useState({ x: 65, y: 40 })
   function move(e: MouseEvent<HTMLDivElement>) {
@@ -294,31 +319,35 @@ function SpotlightHero({ title, tagline, cascade, language }: {
   return (
     <div className="pv-hero pv-hero--spot" onMouseMove={move} style={{ background: `radial-gradient(96px circle at ${spot.x}% ${spot.y}%, color-mix(in srgb, var(--p-accent) 36%, transparent), transparent 72%)` }}>
       <div className="pv-hero-copy">
+        {kicker ? <span className="pv-kicker">{kicker}</span> : null}
         <CascadingTitle title={title} cascade={cascade} />
         {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-        <span className="pv-pill">{language === 'fa' ? 'شروع کن' : 'Get started'}</span>
+        <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
       </div>
     </div>
   )
 }
 
-function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language) {
+function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language, kicker?: string, cta?: string) {
   return (
     <div className="pv-hero-copy">
+      {kicker ? <span className="pv-kicker">{kicker}</span> : null}
       <CascadingTitle title={title} cascade={cascade} />
       {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-      <span className="pv-pill">{language === 'fa' ? 'شروع کن' : 'Get started'}</span>
+      <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
     </div>
   )
 }
 
-function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline }: {
+function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline, kicker, cta }: {
   heroStyle: HeroStyle
   heroImage: string | null
   uiModules: string[]
   language: Language
   title: string
   tagline?: string
+  kicker?: string
+  cta?: string
 }) {
   const cascade = uiModules.includes('anim.text-reveal')
   const aurora = uiModules.includes('anim.aurora')
@@ -335,9 +364,10 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         <div className="pv-hero pv-hero--split">
           {aura}
           <div className="pv-hero-copy">
+            {kicker ? <span className="pv-kicker">{kicker}</span> : null}
             <CascadingTitle title={title} cascade={cascade} />
             {tagline ? <span className="pv-tagline">{tagline}</span> : null}
-            <span className="pv-pill">{language === 'fa' ? 'شروع کن' : 'Get started'}</span>
+            <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
           </div>
           <span className={'pv-art' + (heroImage ? '' : ' pv-art--plain')}>
             <span className="pv-art-orb pv-art-orb-a" />
@@ -347,14 +377,14 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         </div>
       )
     case 'spotlight':
-      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} />
+      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} kicker={kicker} cta={cta} />
     case 'waves':
       return (
         <div className="pv-hero pv-hero--waves">
           {aura}
           <span className="pv-wave pv-wave-a" />
           <span className="pv-wave pv-wave-b" />
-          {heroCopy(title, tagline, cascade, language)}
+          {heroCopy(title, tagline, cascade, language, kicker, cta)}
         </div>
       )
     case 'grid':
@@ -362,7 +392,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         <div className="pv-hero pv-hero--grid">
           {aura}
           <span className="pv-floor" />
-          {heroCopy(title, tagline, cascade, language)}
+          {heroCopy(title, tagline, cascade, language, kicker, cta)}
         </div>
       )
     default:
@@ -371,7 +401,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
           {aura}
           <span className="pv-blob pv-blob-a" />
           <span className="pv-blob pv-blob-b" />
-          {heroCopy(title, tagline, cascade, language)}
+          {heroCopy(title, tagline, cascade, language, kicker, cta)}
         </div>
       )
   }
@@ -396,26 +426,40 @@ function PreviewMarquee({ language }: { language: Language }) {
 
 /* ————— content section ————— */
 
-function PreviewSection({ siteType, uiModules, language }: {
+function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
   siteType: SiteType | null
   uiModules: string[]
   language: Language
+  cardStyle?: 'rounded' | 'soft' | 'sharp'
+  heading?: string
 }) {
   const shop = siteType === 'shop'
   const lift = uiModules.includes('anim.hover-lift')
-  const heading = SECTION_HEADING[siteType ?? 'personal'][language]
+  const float = uiModules.includes('anim.float')
+  const zoom = uiModules.includes('anim.zoom')
+  const shine = uiModules.includes('anim.shine')
+  const sectionLabel = heading?.trim() || SECTION_HEADING[siteType ?? 'personal'][language]
+  const radius = cardStyle === 'soft' ? 16 : cardStyle === 'sharp' ? 4 : 9
   const count = shop ? 4 : 3
   const names = PRODUCT_NAMES[language]
   const prices = PRODUCT_PRICES[language]
   return (
     <div className="pv-section">
-      <span className="pv-section-label">{heading}</span>
+      <span className="pv-section-label">{sectionLabel}</span>
       <div className={shop ? 'pv-cards pv-cards--shop' : 'pv-cards'}>
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className={lift ? 'pv-card pv-card--lift' : 'pv-card'} style={{ animationDelay: `${i * 90}ms` }}>
+          <div
+            key={i}
+            className={lift ? 'pv-card pv-card--lift' : 'pv-card'}
+            style={{
+              animationDelay: `${i * 90}ms`,
+              borderRadius: radius,
+              ...(float ? { animation: `float-y 5s ease-in-out ${i * 0.5}s infinite` } : {})
+            }}
+          >
             {shop ? (
               <>
-                <span className="pv-thumb" />
+                <span className="pv-thumb" style={{ ...(zoom ? { transition: 'transform .4s ease' } : {}) }} />
                 <b className="pv-name">{names[i]}</b>
                 <span className="pv-price">{prices[i]}</span>
               </>
@@ -428,6 +472,7 @@ function PreviewSection({ siteType, uiModules, language }: {
           </div>
         ))}
       </div>
+      {shine ? <span className="pv-pill" style={{ marginTop: 8, position: 'relative', overflow: 'hidden' }}>{language === 'fa' ? 'درخشش دکمه' : 'Button shine'}</span> : null}
     </div>
   )
 }

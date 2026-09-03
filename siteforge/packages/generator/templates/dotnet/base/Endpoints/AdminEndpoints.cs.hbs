@@ -453,7 +453,13 @@ public static class AdminEndpoints
 {{/if}}
         app.MapGet("/api/admin/media", async (HttpContext http, IWebHostEnvironment env, AppDbContext db) =>
         {
-            if (!await IsOwnerTokenAsync(http, db)) return Deny();
+            // NOTE: media must accept the same credentials as every other admin
+            // endpoint (owner code OR staff/admin login). It previously required
+            // an Owner token only, so portfolio/service images 403'd on any C#
+            // site with User Accounts enabled — the picker stayed empty and the
+            // chosen images never appeared. Django's IsOwnerOrStaff already
+            // accepts both, so this brings .NET to parity.
+            if (!await IsAdminAsync(http, db)) return Deny();
             var root = Path.Combine(env.WebRootPath ?? "wwwroot", "media");
             var files = new List<object>();
             if (Directory.Exists(root))
@@ -473,7 +479,8 @@ public static class AdminEndpoints
 
         app.MapPost("/api/admin/media", async (HttpContext http, IWebHostEnvironment env, AppDbContext db) =>
         {
-            if (!await IsOwnerTokenAsync(http, db)) return Deny();
+            // Same owner-or-admin rule as the GET above (see note there).
+            if (!await IsAdminAsync(http, db)) return Deny();
             var root = Path.Combine(env.WebRootPath ?? "wwwroot", "media");
             Directory.CreateDirectory(root);
             var saved = new List<object>();
@@ -499,16 +506,6 @@ public static class AdminEndpoints
         return user?.Email;
     }
 {{/if}}
-
-    private static Task<bool> IsOwnerTokenAsync(HttpContext http, AppDbContext db)
-    {
-        var token = http.Request.Headers["Authorization"].ToString();
-        if (string.IsNullOrEmpty(token) || !token.StartsWith("Owner "))
-            return Task.FromResult(false);
-        var id = token["Owner ".Length..].Trim();
-        if (id.Length == 0) return Task.FromResult(false);
-        return db.OwnerTokens.AnyAsync(t => t.Id == id);
-    }
 
     private static List<string> ParseList(string json)
     {

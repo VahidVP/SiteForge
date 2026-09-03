@@ -550,6 +550,8 @@ code {
 @keyframes wave-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 @keyframes grid-scroll { from{background-position:0 0} to{background-position:0 12px} }
 @keyframes sheen { 0% { transform: translateX(-80%); } 60%, 100% { transform: translateX(80%); } }
+@keyframes shine-sweep { from { left: -60%; } to { left: 130%; } }
+@keyframes float-soft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 
 .word-cascade .word {
   display: inline-block; opacity:0; transform: translateY(0.6em);
@@ -716,6 +718,10 @@ code {
 .anim-hover-lift-demo:hover .demo-lift-card {
   transform: translateY(-6px);
   box-shadow: 0 14px 28px rgba(124, 92, 255, 0.45);
+}
+
+.anim-pick:hover .demo-zoom-inner {
+  transform: scale(1.25);
 }
 
 .tilt-stage {
@@ -1041,6 +1047,14 @@ code {
   letter-spacing: -0.2px;
   line-height: 1.15;
   font-family: var(--p-font-head);
+}
+
+.pv-kicker {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--p-accent);
 }
 
 .pv-tagline {

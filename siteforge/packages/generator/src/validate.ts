@@ -43,7 +43,7 @@ export function validateBlueprint(input: unknown): Blueprint {
   }
 
   const uiModules = Array.from(new Set((Array.isArray(raw.uiModules) ? raw.uiModules : []) as string[]));
-  const knownUi = new Set(['anim.reveal', 'anim.hover-lift', 'anim.text-reveal', 'anim.tilt', 'anim.magnetic', 'anim.aurora', 'anim.marquee']);
+  const knownUi = new Set(['anim.reveal', 'anim.hover-lift', 'anim.text-reveal', 'anim.tilt', 'anim.magnetic', 'anim.aurora', 'anim.marquee', 'anim.float', 'anim.zoom', 'anim.shine']);
   for (const id of uiModules) {
     if (!knownUi.has(id)) throw new Error(`Unknown UI module: ${id}`);
   }
@@ -65,8 +65,33 @@ export function validateBlueprint(input: unknown): Blueprint {
   const LOGO_MODES = new Set(['text', 'image', 'both']);
   const logoMode = LOGO_MODES.has(branding.logoMode as string) ? (branding.logoMode as 'text' | 'image' | 'both') : logo ? 'both' : 'text';
 
-  let adminAccessCode = String(raw.adminAccessCode ?? '').trim();
-  if (modules.includes('auth')) {
+  const CARD_STYLES = new Set(['rounded', 'soft', 'sharp']);
+  const cardStyle = CARD_STYLES.has(raw.cardStyle as string) ? (raw.cardStyle as 'rounded' | 'soft' | 'sharp') : 'rounded';
+  const WIDTHS = new Set(['cozy', 'wide']);
+  const contentWidth = WIDTHS.has(raw.contentWidth as string) ? (raw.contentWidth as 'cozy' | 'wide') : 'cozy';
+
+  // Optional visitor-facing copy overrides from the wizard's "Website text"
+  // card. Empty = fall back to the per-site-type defaults in copy.ts.
+  const contentRaw = (typeof raw.content === 'object' && raw.content !== null ? raw.content : {}) as Record<string, unknown>;
+  const cleanText = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  const content = {
+    heroKicker: cleanText(contentRaw.heroKicker, 60),
+    heroKickerFa: cleanText(contentRaw.heroKickerFa, 60),
+    ctaLabel: cleanText(contentRaw.ctaLabel, 40),
+    ctaLabelFa: cleanText(contentRaw.ctaLabelFa, 40),
+    cardsTitle: cleanText(contentRaw.cardsTitle, 60),
+    cardsTitleFa: cleanText(contentRaw.cardsTitleFa, 60)
+  };
+
+  const heroImage = String(raw.heroImage ?? '').trim();
+  if (heroImage && !heroImage.startsWith('data:image/')) {
+    throw new Error('heroImage must be a data:image/ data URL.');
+  }
+  if (heroImage && heroImage.length > 600_000) {
+    throw new Error('heroImage is too large (must be under ~450 KB).');
+  }
+
+  let adminAccessCode = String(raw.adminAccessCode ?? '').trim();  if (modules.includes('auth')) {
     adminAccessCode = '';
   } else {
     if (!adminAccessCode) {
@@ -88,6 +113,10 @@ export function validateBlueprint(input: unknown): Blueprint {
     headerStyle,
     footerStyle,
     heroStyle,
+    cardStyle,
+    contentWidth,
+    content,
+    ...(heroImage ? { heroImage } : {}),
     modules,
     uiModules,
     branding: { title, tagline, titleFa, taglineFa, logo, logoMode },

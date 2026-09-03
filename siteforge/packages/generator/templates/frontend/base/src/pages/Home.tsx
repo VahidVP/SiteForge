@@ -8,13 +8,14 @@ import ProductCard from '../components/ProductCard'
 import TiltCard from '../components/TiltCard'
 import Magnetic from '../components/Magnetic'
 import { getCopy } from '../lib/copy'
-import { site } from '../lib/site'
+import { site, siteCardsTitle, siteCtaLabel } from '../lib/site'
 import { useI18n } from '../context/LangContext'
 import { api, type Product, type Project, type ServiceItem, getItemGallery, resolveImageUrl } from '../api/client'
 
 export default function Home() {
   const { t, lang } = useI18n()
   const c = getCopy(site.siteType, lang)
+  const ctaLabel = siteCtaLabel(lang, c.ctaLabel)
   const [featured, setFeatured] = useState<Product[] | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
@@ -38,7 +39,7 @@ export default function Home() {
       {/* Hero is intentionally NOT wrapped in .container: hero styles (glow, waves,
           grid, spotlight) are full-bleed backgrounds that must span the whole viewport,
           not sit inside the 1120px content box. Content is constrained inside Hero. */}
-      <Hero kicker={c.heroKicker} ctaTo={ctaTo} ctaLabel={c.ctaLabel} />
+      <Hero kicker={c.heroKicker} ctaTo={ctaTo} ctaLabel={ctaLabel} />
 
       <Marquee />
 
@@ -56,7 +57,7 @@ export default function Home() {
           </Reveal>
         ) : null}
 
-        <Section title={c.cardsTitle}>
+        <Section title={siteCardsTitle(lang, c.cardsTitle)}>
           <div className="grid grid-3">
             {c.cards.map((cardItem, index) => (
               <Reveal key={cardItem.title} delay={index * 90}>
@@ -101,12 +102,26 @@ export default function Home() {
               {projects.length > 0
                 ? projects.slice(0, 3).map((project, index) => (
                     <Reveal key={project.id} delay={index * 90}>
-                      <ProjectCard project={project} />
+                      <Link to={`/portfolio/${project.id}`} style={{ display: 'block', textDecoration: 'none', height: '100%' }}>
+                        {site.tilt ? (
+                          <TiltCard>
+                            <ProjectCardInner project={project} />
+                          </TiltCard>
+                        ) : (
+                          <ProjectCardInner project={project} />
+                        )}
+                      </Link>
                     </Reveal>
                   ))
                 : c.projects.slice(0, 3).map((item, index) => (
                     <Reveal key={item.name} delay={index * 90}>
-                      <StaticCard name={item.name} text={item.description} tags={item.tags} />
+                      {site.tilt ? (
+                        <TiltCard>
+                          <StaticCardInner name={item.name} text={item.description} tags={item.tags} />
+                        </TiltCard>
+                      ) : (
+                        <StaticCardInner name={item.name} text={item.description} tags={item.tags} />
+                      )}
                     </Reveal>
                   ))}
             </div>
@@ -120,21 +135,33 @@ export default function Home() {
                 ? services.slice(0, 4).map((service, index) => (
                     <Reveal key={service.id} delay={index * 90}>
                       <Link to={`/services/${service.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                        <article className={'card' + (site.hoverLift ? ' lift' : '')}>
-                          {service.icon ? <span className="service-icon anim-float">{service.icon}</span> : null}
-                          <h3>{lang === 'fa' && service.titleFa ? service.titleFa : service.title}</h3>
-                          <p className="muted">{lang === 'fa' && service.textFa ? service.textFa : service.text}</p>
-                        </article>
+                        {site.tilt ? (
+                          <TiltCard>
+                            <ServiceCardInner
+                              icon={service.icon}
+                              title={(lang === 'fa' && service.titleFa ? service.titleFa : service.title) ?? ''}
+                              text={(lang === 'fa' && service.textFa ? service.textFa : service.text) ?? ''}
+                            />
+                          </TiltCard>
+                        ) : (
+                          <ServiceCardInner
+                            icon={service.icon}
+                            title={(lang === 'fa' && service.titleFa ? service.titleFa : service.title) ?? ''}
+                            text={(lang === 'fa' && service.textFa ? service.textFa : service.text) ?? ''}
+                          />
+                        )}
                       </Link>
                     </Reveal>
                   ))
                 : c.services.slice(0, 4).map((item, index) => (
                     <Reveal key={item.title} delay={index * 90}>
-                      <article className={'card' + (site.hoverLift ? ' lift' : '')}>
-                        <span className="service-icon anim-float">{item.icon}</span>
-                        <h3>{item.title}</h3>
-                        <p className="muted">{item.text}</p>
-                      </article>
+                      {site.tilt ? (
+                        <TiltCard>
+                          <ServiceCardInner icon={item.icon} title={item.title} text={item.text} />
+                        </TiltCard>
+                      ) : (
+                        <ServiceCardInner icon={item.icon} title={item.title} text={item.text} />
+                      )}
                     </Reveal>
                   ))}
             </div>
@@ -158,7 +185,7 @@ function ShowcaseSection({ title, linkTo, children }: { title: string; linkTo: s
   )
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCardInner({ project }: { project: Project }) {
   const { lang } = useI18n()
   const name = lang === 'fa' && project.nameFa ? project.nameFa : project.name
   const summary = lang === 'fa' && project.summaryFa ? project.summaryFa : (project.summary ?? '')
@@ -166,32 +193,55 @@ function ProjectCard({ project }: { project: Project }) {
   const img = gallery.length > 0 ? resolveImageUrl(gallery[0]) : null
   const tags = Array.isArray(project.tags) && project.tags.length > 0 ? project.tags : (project.Tags ?? [])
   return (
+    <article className={'card' + (site.hoverLift && !site.tilt ? ' lift' : '')} style={{ padding: 0, overflow: 'hidden' }}>
+      {img ? (
+        <img className="product-image" src={img} alt={name} loading="lazy" />
+      ) : (
+        <div className="img-fallback">{name.charAt(0)}</div>
+      )}
+      <div style={{ padding: 18 }}>
+        <h3>{name}</h3>
+        <p className="muted">{summary}</p>
+        {tags.length > 0 ? (
+          <div className="tags">
+            {tags.map(tag => (
+              <span key={tag} className="tag">{tag}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
+// Kept for backwards compatibility with any fork importing ProjectCard.
+function ProjectCard({ project }: { project: Project }) {
+  return (
     <Link to={`/portfolio/${project.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-      <article className={'card' + (site.hoverLift ? ' lift' : '')} style={{ padding: 0, overflow: 'hidden' }}>
-        {img ? (
-          <img className="product-image" src={img} alt={name} loading="lazy" />
-        ) : (
-          <div className="img-fallback">{name.charAt(0)}</div>
-        )}
-        <div style={{ padding: 18 }}>
-          <h3>{name}</h3>
-          <p className="muted">{summary}</p>
-          {tags.length > 0 ? (
-            <div className="tags">
-              {tags.map(tag => (
-                <span key={tag} className="tag">{tag}</span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </article>
+      {site.tilt ? (
+        <TiltCard>
+          <ProjectCardInner project={project} />
+        </TiltCard>
+      ) : (
+        <ProjectCardInner project={project} />
+      )}
     </Link>
   )
 }
 
-function StaticCard({ name, text, tags }: { name: string; text: string; tags: string[] }) {
+function ServiceCardInner({ icon, title, text }: { icon?: string; title: string; text: string }) {
   return (
-    <article className={'card' + (site.hoverLift ? ' lift' : '')} style={{ padding: 0, overflow: 'hidden' }}>
+    <article className={'card' + (site.hoverLift && !site.tilt ? ' lift' : '')}>
+      {icon ? <span className="service-icon anim-float">{icon}</span> : null}
+      <h3>{title}</h3>
+      <p className="muted">{text}</p>
+    </article>
+  )
+}
+
+function StaticCardInner({ name, text, tags }: { name: string; text: string; tags: string[] }) {
+  return (
+    <article className={'card' + (site.hoverLift && !site.tilt ? ' lift' : '')} style={{ padding: 0, overflow: 'hidden' }}>
       <div className="img-fallback">{name.charAt(0)}</div>
       <div style={{ padding: 18 }}>
         <h3>{name}</h3>
@@ -205,5 +255,15 @@ function StaticCard({ name, text, tags }: { name: string; text: string; tags: st
         ) : null}
       </div>
     </article>
+  )
+}
+
+function StaticCard({ name, text, tags }: { name: string; text: string; tags: string[] }) {
+  return site.tilt ? (
+    <TiltCard>
+      <StaticCardInner name={name} text={text} tags={tags} />
+    </TiltCard>
+  ) : (
+    <StaticCardInner name={name} text={text} tags={tags} />
   )
 }

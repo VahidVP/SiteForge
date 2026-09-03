@@ -51,6 +51,16 @@
   100% { transform: translate(60px, -30px) scale(0.9); }
 }
 
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes shine-sweep {
+  from { left: -60%; }
+  to { left: 130%; }
+}
+
 @keyframes word-in {
   to { opacity: 1; transform: none; }
 }
@@ -92,4 +102,42 @@
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
+}
+
+/* ——— wizard-toggled extras (body[data-*] set in index.html) ——— */
+
+/* anim.float: stat cards gently bob. */
+body[data-float='true'] .stat {
+  animation: float-soft 5s ease-in-out infinite;
+}
+
+/* anim.zoom: card photos smoothly zoom on hover. */
+body[data-zoom='true'] .card .product-image {
+  transition: transform 0.5s ease;
+}
+
+body[data-zoom='true'] .card:hover .product-image {
+  transform: scale(1.06);
+}
+
+/* anim.shine: a light sheen sweeps across primary buttons on hover. */
+body[data-shine='true'] .btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+body[data-shine='true'] .btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  left: -60%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+body[data-shine='true'] .btn-primary:hover::after {
+  animation: shine-sweep 0.7s ease;
 }

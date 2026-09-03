@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { Backend, Blueprint, SiteType } from '@siteforge/shared'
+import type { Backend, Blueprint, CardStyle, ContentWidth, SiteType } from '@siteforge/shared'
 import type { FooterStyle, HeaderStyle, HeroStyle, TemplateId } from '@siteforge/shared'
 
 type HeaderId = HeaderStyle
@@ -14,8 +14,31 @@ import { studioT } from './studioI18n'
 const SITE_ICONS: Record<SiteType, string> = { personal: '👤', business: '🏢', shop: '🛍️' }
 const STACK_ICONS: Record<Backend, string> = { django: '🐍', dotnet: '⚙️' }
 
-function slugify(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50)
+// Transliterate Persian/Arabic (plus common diacritics) to ASCII so a Farsi
+// site title still yields a usable latin folder name. Farsi digits become
+// latin digits; the zero-width non-joiner becomes a dash.
+const FA_TRANSMAP: Record<string, string> = {
+  'آ': 'a', 'ا': 'a', 'أ': 'a', 'إ': 'e', 'ب': 'b', 'پ': 'p', 'ت': 't', 'ث': 's',
+  'ج': 'j', 'چ': 'ch', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z',
+  'ژ': 'zh', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'z', 'ط': 't', 'ظ': 'z',
+  'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'gh', 'ک': 'k', 'ك': 'k', 'گ': 'g',
+  'ل': 'l', 'م': 'm', 'ن': 'n', 'و': 'v', 'ؤ': 'o', 'ه': 'h', 'ة': 'h',
+  'ی': 'y', 'ي': 'y', 'ئ': 'e', 'ء': '',
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+  '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+  '‌': '-', '‍': ''
+}
+
+function transliterateFa(value: string): string {
+  return value.split('').map(ch => FA_TRANSMAP[ch] ?? ch).join('')
+}
+
+function smartSlug(value: string): string {
+  const latin = transliterateFa(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+  return latin.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50)
 }
 
 export default function App() {
@@ -31,12 +54,21 @@ export default function App() {
   const [headerStyle, setHeaderStyle] = useState<HeaderStyle>('classic')
   const [footerStyle, setFooterStyle] = useState<FooterStyle>('columns')
   const [heroStyle, setHeroStyle] = useState<HeroStyle>('glow-center')
+  const [cardStyle, setCardStyle] = useState<CardStyle>('rounded')
+  const [contentWidth, setContentWidth] = useState<ContentWidth>('cozy')
+  const [heroKicker, setHeroKicker] = useState('')
+  const [heroKickerFa, setHeroKickerFa] = useState('')
+  const [ctaLabel, setCtaLabel] = useState('')
+  const [ctaLabelFa, setCtaLabelFa] = useState('')
+  const [cardsTitle, setCardsTitle] = useState('')
+  const [cardsTitleFa, setCardsTitleFa] = useState('')
   const [heroImage, setHeroImage] = useState<string | null>(null)
   const [heroError, setHeroError] = useState<string | null>(null)
   const [backend, setBackend] = useState<Backend>('django')
   const [modules, setModules] = useState<string[]>([])
   const [uiModules, setUiModules] = useState<string[]>([])
   const [projectName, setProjectName] = useState('')
+  const [projectTouched, setProjectTouched] = useState(false)
   const [title, setTitle] = useState('')
   const [tagline, setTagline] = useState('')
   const [titleFa, setTitleFa] = useState('')
@@ -111,7 +143,27 @@ export default function App() {
 
   function handleTitleChange(value: string) {
     setTitle(value)
-    setProjectName(slugify(value))
+    // Only auto-fill the folder until the user edits it by hand — otherwise
+    // every keystroke would clobber their manual choice. Prefer the English
+    // title; fall back to the Farsi title transliterated to latin.
+    if (!projectTouched) {
+      const next = smartSlug(value) || (titleFa.trim() ? smartSlug(titleFa) : '')
+      setProjectName(next)
+    }
+  }
+
+  function handleTitleFaChange(value: string) {
+    setTitleFa(value)
+    // Bilingual Farsi-primary sites often fill the Farsi name first while the
+    // English name is still empty — transliterate it so the folder is not blank.
+    if (!projectTouched && !title.trim()) {
+      setProjectName(smartSlug(value))
+    }
+  }
+
+  function handleProjectNameChange(value: string) {
+    setProjectName(value)
+    setProjectTouched(true)
   }
 
   function handleLogoFile(file: File | undefined) {
@@ -149,13 +201,20 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
+  // Recommended folder when the title can't slugify (e.g. Farsi-only):
+  // transliterate first, then fall back to "<siteType>-site" so the field — and
+  // the Next button — are never stuck empty with no hint of what to type.
+  const folderSuggestion =
+    smartSlug(title) || (titleFa.trim() ? smartSlug(titleFa) : '') || (siteType ? `${siteType}-site` : 'my-website')
+  const folderValid = /^[a-z][a-z0-9-]{1,49}$/.test(projectName)
+
   async function runGenerate() {
     if (!siteType || !catalog) return
     setGenerating(true)
     setError(null)
     try {
       await generateSite({
-        projectName: projectName || slugify(title),
+        projectName: folderValid ? projectName : folderSuggestion,
         siteType,
         backend,
         database: 'sqlite',
@@ -166,6 +225,16 @@ export default function App() {
         footerStyle,
         heroStyle,
         ...(heroImage ? { heroImage } : {}),
+        cardStyle,
+        contentWidth,
+        content: {
+          heroKicker: heroKicker.trim(),
+          heroKickerFa: heroKickerFa.trim(),
+          ctaLabel: ctaLabel.trim(),
+          ctaLabelFa: ctaLabelFa.trim(),
+          cardsTitle: cardsTitle.trim(),
+          cardsTitleFa: cardsTitleFa.trim()
+        },
         modules,
         uiModules,
         branding: {
@@ -188,7 +257,9 @@ export default function App() {
 
   function reset() {
     setStep(0); setSiteType(null); setTemplate('midnight'); setLanguage('en'); setBilingual(true); setBackend('django')
-    setModules([]); setUiModules([]); setProjectName(''); setTitle(''); setTagline('')
+    setModules([]); setUiModules([]); setProjectName(''); setProjectTouched(false); setTitle(''); setTagline('')
+    setCardStyle('rounded'); setContentWidth('cozy')
+    setHeroKicker(''); setHeroKickerFa(''); setCtaLabel(''); setCtaLabelFa(''); setCardsTitle(''); setCardsTitleFa('')
     setTitleFa(''); setTaglineFa(''); setLogo(null); setLogoMode('text')
     setHeroImage(null); setHeroError(null)
     setAccessCode(''); setDone(false); setError(null)
@@ -291,6 +362,14 @@ export default function App() {
               footerStyle={footerStyle}
               heroStyle={heroStyle}
               heroImage={heroImage}
+              cardStyle={cardStyle}
+              contentWidth={contentWidth}
+              heroKicker={heroKicker}
+              heroKickerFa={heroKickerFa}
+              ctaLabel={ctaLabel}
+              ctaLabelFa={ctaLabelFa}
+              cardsTitle={cardsTitle}
+              cardsTitleFa={cardsTitleFa}
               modules={modules}
               uiModules={uiModules}
               title={title}
@@ -443,6 +522,68 @@ export default function App() {
               ))}
             </div>
 
+            <h3 className="subsection">{t('w.cardStyle')}</h3>
+            <p className="muted" style={{ margin: '4px 0 0' }}>{t('w.cardStyleDesc')}</p>
+            <div className="grid grid-3" style={{ maxWidth: 560 }}>
+              {(['rounded', 'soft', 'sharp'] as const).map(id => (
+                <button key={id} type="button"
+                  className={cardStyle === id ? 'card option selected' : 'card option lift'}
+                  onClick={() => setCardStyle(id)}>
+                  <span className="mini-preview" style={{ justifyContent: 'center' }}>
+                    <span style={{
+                      width: 72, height: 40,
+                      borderRadius: id === 'soft' ? 20 : id === 'sharp' ? 4 : 12,
+                      background: 'rgba(255,255,255,.10)',
+                      border: '1px solid rgba(255,255,255,.18)'
+                    }} />
+                  </span>
+                  <span className="option-label">{id === 'rounded' ? t('w.cardRounded') : id === 'soft' ? t('w.cardSoft') : t('w.cardSharp')}</span>
+                </button>
+              ))}
+            </div>
+
+            <h3 className="subsection">{t('w.pageWidth')}</h3>
+            <p className="muted" style={{ margin: '4px 0 0' }}>{t('w.pageWidthDesc')}</p>
+            <div className="grid grid-2" style={{ maxWidth: 460 }}>
+              {(['cozy', 'wide'] as const).map(id => (
+                <button key={id} type="button"
+                  className={contentWidth === id ? 'card option selected' : 'card option lift'}
+                  onClick={() => setContentWidth(id)}>
+                  <span className="mini-preview" style={{ justifyContent: 'center' }}>
+                    <span style={{
+                      width: id === 'wide' ? 88 : 56, height: 30,
+                      borderRadius: 6, background: 'rgba(255,255,255,.10)',
+                      border: '1px solid rgba(255,255,255,.18)'
+                    }} />
+                  </span>
+                  <span className="option-label">{id === 'cozy' ? t('w.widthCozy') : t('w.widthWide')}</span>
+                </button>
+              ))}
+            </div>
+
+            <h3 className="subsection">{t('w.siteText')}</h3>
+            <p className="muted" style={{ margin: '4px 0 0' }}>{t('w.siteTextDesc')}</p>
+            <div className="card form-card" style={{ marginTop: 10, maxWidth: 640 }}>
+              {(bilingual
+                ? [
+                    { value: heroKicker, set: setHeroKicker, label: `${t('w.heroKicker')} (EN)`, dir: 'ltr', ph: t('w.heroKickerPh') },
+                    { value: heroKickerFa, set: setHeroKickerFa, label: `${t('w.heroKicker')} (FA)`, dir: 'rtl', ph: t('w.heroKickerPh') },
+                    { value: ctaLabel, set: setCtaLabel, label: `${t('w.ctaLabel')} (EN)`, dir: 'ltr', ph: t('w.ctaLabelPh') },
+                    { value: ctaLabelFa, set: setCtaLabelFa, label: `${t('w.ctaLabel')} (FA)`, dir: 'rtl', ph: t('w.ctaLabelPh') },
+                    { value: cardsTitle, set: setCardsTitle, label: `${t('w.cardsTitle')} (EN)`, dir: 'ltr', ph: t('w.cardsTitlePh') },
+                    { value: cardsTitleFa, set: setCardsTitleFa, label: `${t('w.cardsTitle')} (FA)`, dir: 'rtl', ph: t('w.cardsTitlePh') }
+                  ]
+                : [
+                    { value: language === 'fa' ? heroKickerFa : heroKicker, set: language === 'fa' ? setHeroKickerFa : setHeroKicker, label: t('w.heroKicker'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.heroKickerPh') },
+                    { value: language === 'fa' ? ctaLabelFa : ctaLabel, set: language === 'fa' ? setCtaLabelFa : setCtaLabel, label: t('w.ctaLabel'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.ctaLabelPh') },
+                    { value: language === 'fa' ? cardsTitleFa : cardsTitle, set: language === 'fa' ? setCardsTitleFa : setCardsTitle, label: t('w.cardsTitle'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.cardsTitlePh') }
+                  ]
+              ).map(field => (
+                <label className="field" key={field.label}><span>{field.label}</span>
+                  <input value={field.value} dir={field.dir as 'ltr' | 'rtl'} placeholder={field.ph} onChange={event => field.set(event.target.value)} /></label>
+              ))}
+            </div>
+
             <h3 className="subsection">{t('w.chooseFeatures')}</h3>
             <div className="stack">
               {catalog.modules.map(module => {
@@ -493,14 +634,14 @@ export default function App() {
                       primary language is Farsi. */}
                   {(language === 'fa'
                     ? [
-                        { value: titleFa, set: setTitleFa, label: t('w.siteNameFa'), dir: 'rtl' },
+                        { value: titleFa, set: handleTitleFaChange, label: t('w.siteNameFa'), dir: 'rtl' },
                         { value: title, set: handleTitleChange, label: t('w.siteNameEn'), dir: 'ltr' },
                         { value: taglineFa, set: setTaglineFa, label: t('w.taglineFa'), dir: 'rtl' },
                         { value: tagline, set: setTagline, label: t('w.taglineEn'), dir: 'ltr' }
                       ]
                     : [
                         { value: title, set: handleTitleChange, label: t('w.siteNameEn'), dir: 'ltr' },
-                        { value: titleFa, set: setTitleFa, label: t('w.siteNameFa'), dir: 'rtl' },
+                        { value: titleFa, set: handleTitleFaChange, label: t('w.siteNameFa'), dir: 'rtl' },
                         { value: tagline, set: setTagline, label: t('w.taglineEn'), dir: 'ltr' },
                         { value: taglineFa, set: setTaglineFa, label: t('w.taglineFa'), dir: 'rtl' }
                       ]
@@ -518,7 +659,23 @@ export default function App() {
                 </>
               )}
               <label className="field"><span>{t('w.folder')}</span>
-                <input value={projectName} dir="ltr" onChange={event => setProjectName(event.target.value)} /></label>
+                <input value={projectName} dir="ltr" placeholder={folderSuggestion} onChange={event => handleProjectNameChange(event.target.value)} />
+                <span className="muted" style={{ fontSize: '0.8rem' }}>
+                  {language === 'fa' || !/^[a-z0-9-]*$/.test(title) ? t('w.folderFaHint') : t('w.folderHint')}
+                </span>
+                {!folderValid && (title.trim() || titleFa.trim()) ? (
+                  <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+                    <span className="muted" style={{ fontSize: '0.8rem' }} dir="ltr">{folderSuggestion}</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => { setProjectName(folderSuggestion); setProjectTouched(true) }}
+                    >
+                      {t('w.useSuggestion')}
+                    </button>
+                  </span>
+                ) : null}
+              </label>
 
               <div className="field">
                 <span>{t('w.logoTitle')}</span>
@@ -580,7 +737,7 @@ export default function App() {
             <h2>{t('w.ready')}</h2>
             <div className="summary card">
               <div className="summary-row"><span className="muted">{t('w.designSummary')}</span>
-                <span>{cat('templates', catalog.templates.find(x => x.id === template)).label} · {cat('headerStyles', catalog.headerStyles.find(x => x.id === headerStyle)).label} {t('w.summaryHeader')} · {cat('heroStyles', catalog.heroStyles.find(x => x.id === heroStyle)).label} {t('w.summaryHero')}</span></div>
+                <span>{cat('templates', catalog.templates.find(x => x.id === template)).label} · {cat('headerStyles', catalog.headerStyles.find(x => x.id === headerStyle)).label} {t('w.summaryHeader')} · {cat('heroStyles', catalog.heroStyles.find(x => x.id === heroStyle)).label} {t('w.summaryHero')} · {(cardStyle === 'soft' ? t('w.cardSoft') : cardStyle === 'sharp' ? t('w.cardSharp') : t('w.cardRounded'))} · {(contentWidth === 'wide' ? t('w.widthWide') : t('w.widthCozy'))}</span></div>
               <div className="summary-row"><span className="muted">{t('w.langSummary')}</span>
                 <span>{language === 'fa' ? t('w.farsiFirst') : t('w.englishFirst')} {bilingual ? t('w.switchable') : t('w.singleLang')}</span></div>
               <div className="summary-row"><span className="muted">{t('w.stackSummary')}</span>
@@ -863,6 +1020,43 @@ function LiveAnimation({ id, lang }: { id: string; lang: 'en' | 'fa' }) {
     case 'anim.magnetic': return <MagneticDemo lang={lang} />
     case 'anim.aurora': return <AuroraDemo lang={lang} />
     case 'anim.marquee': return <MarqueeDemo lang={lang} />
+    case 'anim.float': return <FloatDemo lang={lang} />
+    case 'anim.zoom': return <ZoomDemo lang={lang} />
+    case 'anim.shine': return <ShineDemo lang={lang} />
     default: return null
   }
+}
+
+function FloatDemo({ lang }: { lang: 'en' | 'fa' }) {
+  return (
+    <div className="anim-demo" style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+      {[0, 1].map(i => (
+        <span key={i} className="demo-lift-card" style={{ animation: `float-y 5s ease-in-out ${i * 0.6}s infinite` }} />
+      ))}
+      <div className="demo-note">{studioT(lang, 'w.demoNote.float')}</div>
+    </div>
+  )
+}
+
+function ZoomDemo({ lang }: { lang: 'en' | 'fa' }) {
+  return (
+    <div className="anim-demo anim-hover-lift-demo">
+      <span className="demo-lift-card" style={{ overflow: 'hidden' }}>
+        <span style={{ display: 'block', width: '100%', height: '100%', background: 'linear-gradient(135deg,#7c5cff,#22d3ee)', transition: 'transform .5s ease' }} className="demo-zoom-inner" />
+      </span>
+      <div className="demo-note">{studioT(lang, 'w.demoNote.zoom')}</div>
+    </div>
+  )
+}
+
+function ShineDemo({ lang }: { lang: 'en' | 'fa' }) {
+  return (
+    <div className="anim-demo" style={{ display: 'flex', justifyContent: 'center' }}>
+      <span className="demo-magnetic-pill" style={{ position: 'relative', overflow: 'hidden' }}>
+        ✦
+        <span style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', left: '-60%', background: 'linear-gradient(105deg, transparent, rgba(255,255,255,.55), transparent)', transform: 'skewX(-20deg)', animation: 'shine-sweep 2.2s ease infinite' }} />
+      </span>
+      <div className="demo-note">{studioT(lang, 'w.demoNote.shine')}</div>
+    </div>
+  )
 }

@@ -258,7 +258,22 @@ export interface MediaFile {
 export function getItemGallery(item: { gallery?: string[]; Gallery?: string[] }): string[] {
   const raw = item as unknown as Record<string, unknown>
   const direct = raw.gallery ?? raw.Gallery
-  if (Array.isArray(direct)) return direct as string[]
+  if (Array.isArray(direct)) return (direct as unknown[]).filter((u): u is string => typeof u === 'string' && u.length > 0)
+  // Some backends/versions stash the list as a JSON string (galleryJson /
+  // GalleryJson) — parse it instead of showing the "no image" fallback.
+  if (typeof direct === 'string' && direct.trim()) {
+    try {
+      const parsed = JSON.parse(direct)
+      if (Array.isArray(parsed)) return parsed.filter((u): u is string => typeof u === 'string' && u.length > 0)
+    } catch { /* fall through to the *Json fields */ }
+  }
+  const jsonStr = (raw.galleryJson ?? raw.GalleryJson ?? raw.gallery_json) as unknown
+  if (typeof jsonStr === 'string' && jsonStr.trim()) {
+    try {
+      const parsed = JSON.parse(jsonStr)
+      if (Array.isArray(parsed)) return parsed.filter((u): u is string => typeof u === 'string' && u.length > 0)
+    } catch { /* not JSON — no gallery */ }
+  }
   return []
 }
 

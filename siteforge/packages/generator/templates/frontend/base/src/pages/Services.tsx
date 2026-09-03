@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom'
 import Section from '../components/Section'
 import Reveal from '../components/Reveal'
+import TiltCard from '../components/TiltCard'
 import { api, type ServiceItem } from '../api/client'
 import { site } from '../lib/site'
 import { useI18n } from '../context/LangContext'
@@ -26,14 +27,17 @@ export default function Services() {
             {services.map((service, index) => {
               const title = lang === 'fa' && service.titleFa ? service.titleFa : service.title
               const text = lang === 'fa' && service.textFa ? service.textFa : (service.text ?? '')
+              const cardElement = (
+                <article className={'card' + (site.hoverLift && !site.tilt ? ' lift' : '')}>
+                  {service.icon ? <span className="service-icon anim-float">{service.icon}</span> : null}
+                  <h3>{title}</h3>
+                  <p className="muted">{text}</p>
+                </article>
+              )
               return (
                 <Reveal key={service.id} delay={index * 90}>
                   <Link to={`/services/${service.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                    <article className={'card' + (site.hoverLift ? ' lift' : '')}>
-                      {service.icon ? <span className="service-icon anim-float">{service.icon}</span> : null}
-                      <h3>{title}</h3>
-                      <p className="muted">{text}</p>
-                    </article>
+                    {site.tilt ? <TiltCard className={site.hoverLift ? 'lift' : ''}>{cardElement}</TiltCard> : cardElement}
                   </Link>
                 </Reveal>
               )

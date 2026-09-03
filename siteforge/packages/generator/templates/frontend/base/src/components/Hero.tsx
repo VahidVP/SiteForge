@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom'
 import Reveal from './Reveal'
 import RevealText from './RevealText'
 import Magnetic from './Magnetic'
-import { site, siteTitle, siteTagline } from '../lib/site'
+import { site, siteTitle, siteTagline, siteHeroKicker, siteCtaLabel } from '../lib/site'
 import { getCopy } from '../lib/copy'
 import { getLang } from '../lib/i18n'
 
 export default function Hero({
-  kicker,
+  kicker: kickerProp,
   ctaTo,
-  ctaLabel
+  ctaLabel: ctaLabelProp
 }: {
   kicker?: string
   ctaTo?: string
@@ -20,6 +20,9 @@ export default function Hero({
   const copy = getCopy(site.siteType, lang)
   const title = siteTitle(lang)
   const tagline = siteTagline(lang)
+  // Wizard "Website text" overrides win over the per-type defaults.
+  const kicker = siteHeroKicker(lang, kickerProp ?? copy.heroKicker)
+  const ctaLabel = siteCtaLabel(lang, ctaLabelProp ?? copy.ctaLabel)
   const style = site.heroStyle
 
   function trackSpotlight(event: MouseEvent<HTMLElement>) {
@@ -68,7 +71,7 @@ export default function Hero({
     return (
       <section className="hero hero-spotlight" onMouseMove={trackSpotlight}>
         <Reveal>
-          <span className="kicker">{copy.heroKicker}</span>
+          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (
@@ -90,7 +93,7 @@ export default function Hero({
           </Reveal>
         ) : null}
         <Reveal>
-          <span className="kicker">{copy.heroKicker}</span>
+          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (
@@ -110,7 +113,7 @@ export default function Hero({
     return (
       <section className="hero hero-gridbg">
         <Reveal>
-          <span className="kicker">{copy.heroKicker}</span>
+          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (

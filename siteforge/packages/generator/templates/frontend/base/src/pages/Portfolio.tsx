@@ -33,7 +33,7 @@ export default function Portfolio() {
 
               const cardElement = (
                 <article
-                  className={'card project-card' + (site.hoverLift ? ' lift' : '')}
+                  className={'card project-card' + (site.hoverLift && !site.tilt ? ' lift' : '')}
                   style={{ padding: 0, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}
                 >
                   {img ? (
@@ -58,7 +58,7 @@ export default function Portfolio() {
               return (
                 <Reveal key={project.id} delay={index * 90}>
                   <Link to={`/portfolio/${project.id}`} style={{ display: 'block', textDecoration: 'none', height: '100%' }}>
-                    {site.tilt ? <TiltCard>{cardElement}</TiltCard> : cardElement}
+                    {site.tilt ? <TiltCard className={site.hoverLift ? 'lift' : ''}>{cardElement}</TiltCard> : cardElement}
                   </Link>
                 </Reveal>
               )

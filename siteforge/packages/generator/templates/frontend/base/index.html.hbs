@@ -23,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
-  <body data-template="{{template}}" data-lang="{{language}}" data-header="{{headerStyle}}" data-footer="{{footerStyle}}" data-hero="{{heroStyle}}">
+  <body data-template="{{template}}" data-lang="{{language}}" data-header="{{headerStyle}}" data-footer="{{footerStyle}}" data-hero="{{heroStyle}}" data-cards="{{cardStyle}}" data-width="{{contentWidth}}" data-float="{{bool fFloat}}" data-zoom="{{bool fZoom}}" data-shine="{{bool fShine}}">
     <div id="root"></div>
     <script>
       window.__SITE__ = {
@@ -41,6 +41,14 @@
         footerStyle: {{json footerStyle}},
         heroStyle: {{json heroStyle}},
         heroImage: {{json heroImage}},
+        cardStyle: {{json cardStyle}},
+        contentWidth: {{json contentWidth}},
+        heroKicker: {{json heroKicker}},
+        heroKickerFa: {{json heroKickerFa}},
+        ctaLabel: {{json ctaLabel}},
+        ctaLabelFa: {{json ctaLabelFa}},
+        cardsTitle: {{json cardsTitle}},
+        cardsTitleFa: {{json cardsTitleFa}},
         authScheme: {{json authScheme}},
         hasOwnerCode: {{bool adminAccessCode}},
         auth: {{bool auth}},
@@ -52,7 +60,10 @@
         tilt: {{bool fTilt}},
         magnetic: {{bool fMagnetic}},
         aurora: {{bool fAurora}},
-        marquee: {{bool fMarquee}}
+        marquee: {{bool fMarquee}},
+        float: {{bool fFloat}},
+        zoom: {{bool fZoom}},
+        shine: {{bool fShine}}
       };
     </script>
     <script type="module" src="/src/main.tsx"></script>
