@@ -8,8 +8,6 @@ export type CardStyle = 'rounded' | 'soft' | 'sharp';
 export type ContentWidth = 'cozy' | 'wide';
 
 export interface SiteContent {
-  heroKicker?: string;
-  heroKickerFa?: string;
   ctaLabel?: string;
   ctaLabelFa?: string;
   cardsTitle?: string;

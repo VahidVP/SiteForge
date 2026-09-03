@@ -23,8 +23,6 @@ export interface LivePreviewProps {
   heroImage: string | null
   cardStyle?: 'rounded' | 'soft' | 'sharp'
   contentWidth?: 'cozy' | 'wide'
-  heroKicker?: string
-  heroKickerFa?: string
   ctaLabel?: string
   ctaLabelFa?: string
   cardsTitle?: string
@@ -227,7 +225,6 @@ export function LivePreview(props: LivePreviewProps) {
             language={lang}
             title={brandTitle}
             tagline={tagline}
-            kicker={(lang === 'fa' ? (props.heroKickerFa?.trim() || props.heroKicker) : (props.heroKicker?.trim() || props.heroKickerFa))?.trim() || undefined}
             cta={(lang === 'fa' ? (props.ctaLabelFa?.trim() || props.ctaLabel) : (props.ctaLabel?.trim() || props.ctaLabelFa))?.trim() || undefined}
           />
           {props.uiModules.includes('anim.marquee') ? <PreviewMarquee language={lang} /> : null}
@@ -303,12 +300,11 @@ function CascadingTitle({ title, cascade }: { title: string; cascade: boolean })
   )
 }
 
-function SpotlightHero({ title, tagline, cascade, language, kicker, cta }: {
+function SpotlightHero({ title, tagline, cascade, language, cta }: {
   title: string
   tagline?: string
   cascade: boolean
   language: Language
-  kicker?: string
   cta?: string
 }) {
   const [spot, setSpot] = useState({ x: 65, y: 40 })
@@ -319,7 +315,6 @@ function SpotlightHero({ title, tagline, cascade, language, kicker, cta }: {
   return (
     <div className="pv-hero pv-hero--spot" onMouseMove={move} style={{ background: `radial-gradient(96px circle at ${spot.x}% ${spot.y}%, color-mix(in srgb, var(--p-accent) 36%, transparent), transparent 72%)` }}>
       <div className="pv-hero-copy">
-        {kicker ? <span className="pv-kicker">{kicker}</span> : null}
         <CascadingTitle title={title} cascade={cascade} />
         {tagline ? <span className="pv-tagline">{tagline}</span> : null}
         <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
@@ -328,10 +323,9 @@ function SpotlightHero({ title, tagline, cascade, language, kicker, cta }: {
   )
 }
 
-function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language, kicker?: string, cta?: string) {
+function heroCopy(title: string, tagline: string | undefined, cascade: boolean, language: Language, cta?: string) {
   return (
     <div className="pv-hero-copy">
-      {kicker ? <span className="pv-kicker">{kicker}</span> : null}
       <CascadingTitle title={title} cascade={cascade} />
       {tagline ? <span className="pv-tagline">{tagline}</span> : null}
       <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
@@ -339,14 +333,13 @@ function heroCopy(title: string, tagline: string | undefined, cascade: boolean, 
   )
 }
 
-function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline, kicker, cta }: {
+function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline, cta }: {
   heroStyle: HeroStyle
   heroImage: string | null
   uiModules: string[]
   language: Language
   title: string
   tagline?: string
-  kicker?: string
   cta?: string
 }) {
   const cascade = uiModules.includes('anim.text-reveal')
@@ -364,7 +357,6 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         <div className="pv-hero pv-hero--split">
           {aura}
           <div className="pv-hero-copy">
-            {kicker ? <span className="pv-kicker">{kicker}</span> : null}
             <CascadingTitle title={title} cascade={cascade} />
             {tagline ? <span className="pv-tagline">{tagline}</span> : null}
             <span className="pv-pill">{cta || (language === 'fa' ? 'شروع کن' : 'Get started')}</span>
@@ -377,14 +369,14 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         </div>
       )
     case 'spotlight':
-      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} kicker={kicker} cta={cta} />
+      return <SpotlightHero title={title} tagline={tagline} cascade={cascade} language={language} cta={cta} />
     case 'waves':
       return (
         <div className="pv-hero pv-hero--waves">
           {aura}
           <span className="pv-wave pv-wave-a" />
           <span className="pv-wave pv-wave-b" />
-          {heroCopy(title, tagline, cascade, language, kicker, cta)}
+          {heroCopy(title, tagline, cascade, language, cta)}
         </div>
       )
     case 'grid':
@@ -392,7 +384,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
         <div className="pv-hero pv-hero--grid">
           {aura}
           <span className="pv-floor" />
-          {heroCopy(title, tagline, cascade, language, kicker, cta)}
+          {heroCopy(title, tagline, cascade, language, cta)}
         </div>
       )
     default:
@@ -401,7 +393,7 @@ function PreviewHero({ heroStyle, heroImage, uiModules, language, title, tagline
           {aura}
           <span className="pv-blob pv-blob-a" />
           <span className="pv-blob pv-blob-b" />
-          {heroCopy(title, tagline, cascade, language, kicker, cta)}
+          {heroCopy(title, tagline, cascade, language, cta)}
         </div>
       )
   }

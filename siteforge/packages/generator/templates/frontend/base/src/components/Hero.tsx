@@ -3,16 +3,14 @@ import { Link } from 'react-router-dom'
 import Reveal from './Reveal'
 import RevealText from './RevealText'
 import Magnetic from './Magnetic'
-import { site, siteTitle, siteTagline, siteHeroKicker, siteCtaLabel } from '../lib/site'
+import { site, siteTitle, siteTagline, siteCtaLabel } from '../lib/site'
 import { getCopy } from '../lib/copy'
 import { getLang } from '../lib/i18n'
 
 export default function Hero({
-  kicker: kickerProp,
   ctaTo,
   ctaLabel: ctaLabelProp
 }: {
-  kicker?: string
   ctaTo?: string
   ctaLabel?: string
 }) {
@@ -21,7 +19,6 @@ export default function Hero({
   const title = siteTitle(lang)
   const tagline = siteTagline(lang)
   // Wizard "Website text" overrides win over the per-type defaults.
-  const kicker = siteHeroKicker(lang, kickerProp ?? copy.heroKicker)
   const ctaLabel = siteCtaLabel(lang, ctaLabelProp ?? copy.ctaLabel)
   const style = site.heroStyle
 
@@ -36,9 +33,6 @@ export default function Hero({
       <section className="hero" style={{ paddingBlock: '70px 40px' }}>
         <div className="hero-split container">
           <div className="hero-copy">
-            {kicker ? (
-              <Reveal><span className="kicker">{kicker}</span></Reveal>
-            ) : null}
             <Reveal delay={80}>
               <h1><RevealText text={title} /></h1>
             </Reveal>
@@ -71,7 +65,6 @@ export default function Hero({
     return (
       <section className="hero hero-spotlight" onMouseMove={trackSpotlight}>
         <Reveal>
-          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (
@@ -93,7 +86,6 @@ export default function Hero({
           </Reveal>
         ) : null}
         <Reveal>
-          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (
@@ -113,7 +105,6 @@ export default function Hero({
     return (
       <section className="hero hero-gridbg">
         <Reveal>
-          <span className="kicker">{kicker}</span>
           <h1>{title}</h1>
           <p className="tagline">{tagline}</p>
           {ctaTo && ctaLabel ? (
@@ -134,9 +125,6 @@ export default function Hero({
           <div className={'hero-glow hero-glow-b' + (site.aurora ? ' anim-glow d-3' : '')} />
         </div>
       </Reveal>
-      {kicker ? (
-        <Reveal><span className="kicker">{kicker}</span></Reveal>
-      ) : null}
       <Reveal delay={80}>
         <h1><RevealText text={title} /></h1>
       </Reveal>

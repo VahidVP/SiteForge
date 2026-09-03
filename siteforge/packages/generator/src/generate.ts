@@ -28,8 +28,6 @@ export interface Ctx {
   heroImage: string;
   cardStyle: string;
   contentWidth: string;
-  heroKicker: string;
-  heroKickerFa: string;
   ctaLabel: string;
   ctaLabelFa: string;
   cardsTitle: string;
@@ -81,8 +79,6 @@ export function buildCtx(bp: Blueprint): Ctx {
     heroImage: bp.heroImage ?? '',
     cardStyle: bp.cardStyle ?? 'rounded',
     contentWidth: bp.contentWidth ?? 'cozy',
-    heroKicker: bp.content?.heroKicker ?? '',
-    heroKickerFa: bp.content?.heroKickerFa ?? '',
     ctaLabel: bp.content?.ctaLabel ?? '',
     ctaLabelFa: bp.content?.ctaLabelFa ?? '',
     cardsTitle: bp.content?.cardsTitle ?? '',

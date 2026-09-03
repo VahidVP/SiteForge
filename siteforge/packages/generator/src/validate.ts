@@ -75,8 +75,6 @@ export function validateBlueprint(input: unknown): Blueprint {
   const contentRaw = (typeof raw.content === 'object' && raw.content !== null ? raw.content : {}) as Record<string, unknown>;
   const cleanText = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
   const content = {
-    heroKicker: cleanText(contentRaw.heroKicker, 60),
-    heroKickerFa: cleanText(contentRaw.heroKickerFa, 60),
     ctaLabel: cleanText(contentRaw.ctaLabel, 40),
     ctaLabelFa: cleanText(contentRaw.ctaLabelFa, 40),
     cardsTitle: cleanText(contentRaw.cardsTitle, 60),

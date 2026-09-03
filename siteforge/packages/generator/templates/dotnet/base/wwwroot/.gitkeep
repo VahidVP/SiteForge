@@ -1,0 +1,4 @@
+This folder is the web root for static files (uploaded images live under
+media/). It must exist in the generated project, otherwise ASP.NET Core logs
+"The WebRootPath was not found ... Static files may be unavailable." at
+startup. Keep this file so the empty folder survives generation and git.

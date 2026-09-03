@@ -1049,14 +1049,6 @@ code {
   font-family: var(--p-font-head);
 }
 
-.pv-kicker {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--p-accent);
-}
-
 .pv-tagline {
   font-size: 0.72rem;
   color: var(--p-muted);

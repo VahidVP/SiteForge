@@ -141,7 +141,7 @@ body[data-cards='sharp'] {
   padding: 6px 2px;
   border-bottom: 2px solid transparent;
   transition: color 0.15s ease;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
 }
 
 .nav-links a:hover { color: var(--text); }

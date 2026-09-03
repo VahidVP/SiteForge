@@ -161,6 +161,15 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-03 — wwwroot warning fix, hero kicker removed, navbar text slightly bigger
+
+Three user reports from a generated personal/C# site:
+
+- **"The WebRootPath was not found … Static files may be unavailable." is fixed.** Root cause: the generated backend shipped no `wwwroot/` folder (the template had none, and `DbInitializer` only creates `wwwroot/media` at runtime — after the StaticFiles middleware already complained at startup). Two-layer fix in the template: a `wwwroot/.gitkeep` so the folder survives generation and git, plus `Directory.CreateDirectory(.../wwwroot)` in `Program.cs.hbs` before `app.UseStaticFiles()` in case the user deletes it. **Django is unaffected** — it has no wwwroot concept; `MEDIA_ROOT` is created automatically on the first image upload and Django never warns at startup.
+- **The hero badge tag above the hero title is removed** (e.g. "وبسایت شخصی" / "Personal site"). Gone from all five hero styles in `Hero.tsx`, plus the full pipeline cleanup so nothing dangles: `copy.ts` defaults, `site.ts` fields + `siteHeroKicker()` helper, `__SITE__` payload, generator `Ctx`/`validate`/`SiteContent`, the wizard's "Hero badge" inputs (EN+FA keys removed), and the live preview's kicker line. The "Website text" card now only overrides the button label and the features heading. Old blueprints that still contain `content.heroKicker` keep generating fine — the field is simply ignored.
+- **Navbar links slightly bigger** (per your pick): `.nav-links a` `0.95rem → 1.02rem` in the generated `styles.css`; brand (1.08rem) and the bordered-header variant untouched so the hierarchy stays.
+- **Verification:** root `npm run typecheck` clean; studio `vite build` clean; fresh personal/dotnet/FA generation — `wwwroot/.gitkeep` emitted, zero `kicker` references in `Hero.tsx`, no `{{…}}`/`heroKicker` in `index.html`, nav `1.02rem` in CSS, `CreateDirectory(wwwroot)` in `Program.cs`; old blueprint with `heroKicker` still validates (backward compatible); generated frontend `tsc --noEmit` clean + `vite build` clean; generated backend `dotnet build` **0 warnings, 0 errors** and a live boot shows **no WebRootPath warning** with `/api/pages/home/` serving correctly.
+
 ### 2026-09-03 — Featured-card tilt on Home, Farsi folder suggestion, C# portfolio images, more templates/animations/design controls
 
 Five user requests in one round:

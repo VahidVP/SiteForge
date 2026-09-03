@@ -19,7 +19,6 @@ export interface TeamMember {
 }
 
 export interface SiteCopy {
-  heroKicker: string
   heroTitle: string
   tagline: string
   ctaLabel: string
@@ -37,7 +36,6 @@ export interface SiteCopy {
 }
 
 const personalEn: SiteCopy = {
-  heroKicker: 'Personal site',
   heroTitle: 'Hi, I am glad you are here.',
   tagline: 'Designer and developer crafting small, sharp things for the web.',
   ctaLabel: 'See my work',
@@ -71,7 +69,6 @@ const personalEn: SiteCopy = {
 }
 
 const personalFa: SiteCopy = {
-  heroKicker: 'وب‌سایت شخصی',
   heroTitle: 'سلام، خوشحالم که اینجا هستید.',
   tagline: 'طراح و توسعه‌دهنده؛ سازنده چیزهای کوچک و دقیق برای وب.',
   ctaLabel: 'دیدن نمونه‌کارها',
@@ -105,7 +102,6 @@ const personalFa: SiteCopy = {
 }
 
 const businessEn: SiteCopy = {
-  heroKicker: 'Our company',
   heroTitle: 'Quality work, delivered on time.',
   tagline: 'We help ambitious teams design, build and launch digital products their customers love.',
   ctaLabel: 'Explore our services',
@@ -143,7 +139,6 @@ const businessEn: SiteCopy = {
 }
 
 const businessFa: SiteCopy = {
-  heroKicker: 'شرکت ما',
   heroTitle: 'کار باکیفیت، تحویل به‌موقع.',
   tagline: 'به تیم‌های جاه‌طلب کمک می‌کنیم محصولات دیجیتال را طراحی، ساخت و عرضه کنند.',
   ctaLabel: 'مشاهده خدمات',
@@ -181,7 +176,6 @@ const businessFa: SiteCopy = {
 }
 
 const shopEn: SiteCopy = {
-  heroKicker: 'Online store',
   heroTitle: 'Great products, fair prices.',
   tagline: 'Curated goods for everyday life. Free returns within 30 days, always.',
   ctaLabel: 'Browse products',
@@ -210,7 +204,6 @@ const shopEn: SiteCopy = {
 }
 
 const shopFa: SiteCopy = {
-  heroKicker: 'فروشگاه اینترنتی',
   heroTitle: 'محصولات خوب، قیمت منصفانه.',
   tagline: 'کالاهای منتخب برای زندگی روزمره. ۳۰ روز ضمانت بازگشت بی‌قید و شرط.',
   ctaLabel: 'مشاهده محصولات',

@@ -23,6 +23,10 @@ builder.Services.AddSingleton<PasswordHasher<User>>();
 var app = builder.Build();
 
 app.UseCors();
+// The template ships a wwwroot/ folder, but make sure it exists even if the
+// user deleted it: otherwise ASP.NET Core logs "The WebRootPath was not
+// found ... Static files may be unavailable." and uploaded /media images 404.
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot"));
 app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())

@@ -15,8 +15,6 @@ export interface SiteFlags {
   heroImage?: string
   cardStyle: 'rounded' | 'soft' | 'sharp'
   contentWidth: 'cozy' | 'wide'
-  heroKicker?: string
-  heroKickerFa?: string
   ctaLabel?: string
   ctaLabelFa?: string
   cardsTitle?: string
@@ -60,8 +58,6 @@ export const site: SiteFlags = {
   heroImage: (raw?.heroImage as string) ?? '',
   cardStyle: ((raw?.cardStyle as string) === 'soft' || (raw?.cardStyle as string) === 'sharp' ? (raw?.cardStyle as SiteFlags['cardStyle']) : 'rounded'),
   contentWidth: ((raw?.contentWidth as string) === 'wide' ? 'wide' : 'cozy'),
-  heroKicker: (raw?.heroKicker as string) ?? '',
-  heroKickerFa: (raw?.heroKickerFa as string) ?? '',
   ctaLabel: (raw?.ctaLabel as string) ?? '',
   ctaLabelFa: (raw?.ctaLabelFa as string) ?? '',
   cardsTitle: (raw?.cardsTitle as string) ?? '',
@@ -97,15 +93,6 @@ export function siteTagline(lang: string): string {
 }
 
 /** Wizard "Website text" overrides with fallback to the per-type defaults. */
-export function siteHeroKicker(lang: string, fallback: string): string {
-  if (lang === 'fa' && site.heroKickerFa && site.heroKickerFa.trim()) return site.heroKickerFa
-  if (lang !== 'fa' && site.heroKicker && site.heroKicker.trim()) return site.heroKicker
-  // Cross-fallback so a single-language override still shows in the other lang.
-  if (site.heroKickerFa && site.heroKickerFa.trim()) return lang === 'fa' ? site.heroKickerFa : (site.heroKicker?.trim() ? site.heroKicker : site.heroKickerFa)
-  if (site.heroKicker && site.heroKicker.trim()) return site.heroKicker
-  return fallback
-}
-
 export function siteCtaLabel(lang: string, fallback: string): string {
   if (lang === 'fa' && site.ctaLabelFa && site.ctaLabelFa.trim()) return site.ctaLabelFa
   if (lang !== 'fa' && site.ctaLabel && site.ctaLabel.trim()) return site.ctaLabel

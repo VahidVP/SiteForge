@@ -56,8 +56,6 @@ export default function App() {
   const [heroStyle, setHeroStyle] = useState<HeroStyle>('glow-center')
   const [cardStyle, setCardStyle] = useState<CardStyle>('rounded')
   const [contentWidth, setContentWidth] = useState<ContentWidth>('cozy')
-  const [heroKicker, setHeroKicker] = useState('')
-  const [heroKickerFa, setHeroKickerFa] = useState('')
   const [ctaLabel, setCtaLabel] = useState('')
   const [ctaLabelFa, setCtaLabelFa] = useState('')
   const [cardsTitle, setCardsTitle] = useState('')
@@ -228,8 +226,6 @@ export default function App() {
         cardStyle,
         contentWidth,
         content: {
-          heroKicker: heroKicker.trim(),
-          heroKickerFa: heroKickerFa.trim(),
           ctaLabel: ctaLabel.trim(),
           ctaLabelFa: ctaLabelFa.trim(),
           cardsTitle: cardsTitle.trim(),
@@ -259,7 +255,7 @@ export default function App() {
     setStep(0); setSiteType(null); setTemplate('midnight'); setLanguage('en'); setBilingual(true); setBackend('django')
     setModules([]); setUiModules([]); setProjectName(''); setProjectTouched(false); setTitle(''); setTagline('')
     setCardStyle('rounded'); setContentWidth('cozy')
-    setHeroKicker(''); setHeroKickerFa(''); setCtaLabel(''); setCtaLabelFa(''); setCardsTitle(''); setCardsTitleFa('')
+    setCtaLabel(''); setCtaLabelFa(''); setCardsTitle(''); setCardsTitleFa('')
     setTitleFa(''); setTaglineFa(''); setLogo(null); setLogoMode('text')
     setHeroImage(null); setHeroError(null)
     setAccessCode(''); setDone(false); setError(null)
@@ -364,8 +360,6 @@ export default function App() {
               heroImage={heroImage}
               cardStyle={cardStyle}
               contentWidth={contentWidth}
-              heroKicker={heroKicker}
-              heroKickerFa={heroKickerFa}
               ctaLabel={ctaLabel}
               ctaLabelFa={ctaLabelFa}
               cardsTitle={cardsTitle}
@@ -566,15 +560,12 @@ export default function App() {
             <div className="card form-card" style={{ marginTop: 10, maxWidth: 640 }}>
               {(bilingual
                 ? [
-                    { value: heroKicker, set: setHeroKicker, label: `${t('w.heroKicker')} (EN)`, dir: 'ltr', ph: t('w.heroKickerPh') },
-                    { value: heroKickerFa, set: setHeroKickerFa, label: `${t('w.heroKicker')} (FA)`, dir: 'rtl', ph: t('w.heroKickerPh') },
                     { value: ctaLabel, set: setCtaLabel, label: `${t('w.ctaLabel')} (EN)`, dir: 'ltr', ph: t('w.ctaLabelPh') },
                     { value: ctaLabelFa, set: setCtaLabelFa, label: `${t('w.ctaLabel')} (FA)`, dir: 'rtl', ph: t('w.ctaLabelPh') },
                     { value: cardsTitle, set: setCardsTitle, label: `${t('w.cardsTitle')} (EN)`, dir: 'ltr', ph: t('w.cardsTitlePh') },
                     { value: cardsTitleFa, set: setCardsTitleFa, label: `${t('w.cardsTitle')} (FA)`, dir: 'rtl', ph: t('w.cardsTitlePh') }
                   ]
                 : [
-                    { value: language === 'fa' ? heroKickerFa : heroKicker, set: language === 'fa' ? setHeroKickerFa : setHeroKicker, label: t('w.heroKicker'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.heroKickerPh') },
                     { value: language === 'fa' ? ctaLabelFa : ctaLabel, set: language === 'fa' ? setCtaLabelFa : setCtaLabel, label: t('w.ctaLabel'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.ctaLabelPh') },
                     { value: language === 'fa' ? cardsTitleFa : cardsTitle, set: language === 'fa' ? setCardsTitleFa : setCardsTitle, label: t('w.cardsTitle'), dir: language === 'fa' ? 'rtl' : 'ltr', ph: t('w.cardsTitlePh') }
                   ]
