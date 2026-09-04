@@ -13,8 +13,20 @@ npm run dev
 Open http://localhost:5173 — API calls are proxied to the backend on port 8000.
 {{#if auth}}
 
-**Admin access:** the very first account you register becomes the site owner (admin).
-Sign in with it and open `/admin` to manage users{{#if shop}}, products{{/if}}{{#if contact}} and messages{{/if}}.
+**Admin access:** new signups are always customers — nobody becomes admin by
+registering. To become the site owner:
+
+1. Sign up on the website, then open `/dashboard`.
+2. In the **Claim admin access** card, enter your owner setup code
+   (Django: `ADMIN_ACCESS_CODE` in `backend/config/settings.py`;
+   .NET: `AdminAccessCode` in `backend/appsettings.json`).
+3. It works once, while no admin exists yet. Afterwards, open `/admin` to
+   manage users{{#if shop}}, products{{/if}}{{#if contact}} and messages{{/if}},
+   and promote further admins from **Admin → Users**.
+
+Recovery without the code (needs server access): Django
+`python manage.py promote_admin --email owner@example.com` (or
+`createsuperuser`); .NET `dotnet run -- promote-admin --email owner@example.com`.
 {{/if}}
 {{#if django}}
 
@@ -37,7 +49,8 @@ There is also a full admin panel at http://localhost:8000/admin/ — create a lo
 python manage.py createsuperuser
 ```
 
-(or simply register through the website — the first account is an admin automatically).
+(or register through the website, then claim admin in `/dashboard` with your
+owner setup code — or `python manage.py promote_admin --email you@example.com`).
 {{/if}}
 {{#if dotnet}}
 

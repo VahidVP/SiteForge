@@ -5,5 +5,6 @@
   "database": "sqlite",
   "modules": ["pages", "contact-form", "auth", "shop-catalog"],
   "uiModules": ["anim.reveal", "anim.hover-lift"],
-  "branding": { "title": "My Shop", "tagline": "Great products, fair prices." }
+  "branding": { "title": "My Shop", "tagline": "Great products, fair prices." },
+  "adminAccessCode": "demo-owner-1234"
 }

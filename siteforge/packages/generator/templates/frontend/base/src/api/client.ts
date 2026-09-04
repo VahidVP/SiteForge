@@ -28,11 +28,18 @@ export function setOwnerToken(token: string | null): void {
 }
 
 function authHeader(): string | null {
+  // A signed-in user session always wins over an owner token. Owner tokens
+  // linger in localStorage (every generated site shares the localhost
+  // origin during development), and a stale one from another site used to
+  // shadow the fresh login here — the backend answered 401 and the user
+  // looked like a "normal user" (or, once that failure became loud, could
+  // not reach the dashboard at all). Owner-only sites have no user token,
+  // so the fallback below still serves them.
+  const token = getToken()
+  if (token) return `${site.authScheme} ${token}`
   const owner = getOwnerToken()
   if (owner) return `Owner ${owner}`
-  const token = getToken()
-  if (!token) return null
-  return `${site.authScheme} ${token}`
+  return null
 }
 
 export interface PageContent {
@@ -332,6 +339,10 @@ export const api = {
     request<{ ok: boolean }>('/api/contact/', { method: 'POST', body: JSON.stringify(body) }, false),
   register: (email: string, password: string) =>
     request<AuthResponse>('/api/auth/register/', { method: 'POST', body: JSON.stringify({ email, password }) }, false),
+  claimAdmin: (code: string) =>
+    request<{ email: string; isAdmin: boolean }>('/api/auth/claim-admin/', { method: 'POST', body: JSON.stringify({ code }) }),
+  adminStatus: () =>
+    request<{ hasAdmin: boolean }>('/api/auth/admin-status/', {}, false),
   login: (email: string, password: string) =>
     request<AuthResponse>('/api/auth/login/', { method: 'POST', body: JSON.stringify({ email, password }) }, false),
   me: async () => normalizeMe(await request<MeResponse>('/api/auth/me/')),
@@ -361,6 +372,8 @@ export const api = {
   admin: {
     users: () => request<AdminUser[]>('/api/admin/users/'),
     deleteUser: (id: number) => request<void>(`/api/admin/users/${id}/`, { method: 'DELETE' }),
+    setUserRole: (id: number, isAdmin: boolean) =>
+      request<AdminUser>(`/api/admin/users/${id}/role/`, { method: 'PUT', body: JSON.stringify({ isAdmin }) }),
     products: () => request<Product[]>('/api/admin/products/'),
     createProduct: (body: Omit<Product, 'id'> & { nameFa?: string; descriptionFa?: string; details?: DetailRow[] }) =>
       request<Product>('/api/admin/products/', { method: 'POST', body: JSON.stringify(body) }),

@@ -53,7 +53,11 @@ export default function Dashboard() {
               <span className="avatar">{email.charAt(0).toUpperCase()}</span>
               <h3 style={{ margin: '6px 0 0', wordBreak: 'break-all' }}>{email}</h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                {isAdmin && <span className="badge badge-admin">{t('admin.admin')}</span>}
+                {isAdmin ? (
+                  <span className="badge badge-admin">{t('admin.admin')}</span>
+                ) : (
+                  <span className="badge badge-closed">{t('dash.member')}</span>
+                )}
                 <span className="badge badge-closed">{t('dash.profile')}</span>
               </div>
               {isAdmin && (
@@ -64,6 +68,7 @@ export default function Dashboard() {
                   </Link>
                 </>
               )}
+              {!isAdmin && <ClaimAdminCard />}
               {site.shop ? (
                 <Link to="/products" className="btn btn-ghost btn-sm">
                   {t('dash.keepShopping')}
@@ -77,6 +82,65 @@ export default function Dashboard() {
       {section === 'orders' && <OrdersPanel />}
       {section === 'support' && site.shop && <SupportPanel />}
     </ConsoleLayout>
+  )
+}
+
+function ClaimAdminCard() {
+  const { t } = useI18n()
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  // 'open' = no admin yet, card visible. Anything else renders nothing, so
+  // once the owner has claimed admin, other accounts never see this section.
+  const [seat, setSeat] = useState<'loading' | 'open' | 'taken'>('loading')
+
+  useEffect(() => {
+    api.adminStatus()
+      .then(s => setSeat(s.hasAdmin ? 'taken' : 'open'))
+      // Fail open: the server still guards the claim (410 when taken), so a
+      // status hiccup never locks the owner out.
+      .catch(() => setSeat('open'))
+  }, [])
+
+  async function handleClaim(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setMessage(null)
+    try {
+      await api.claimAdmin(code.trim())
+      setMessage({ ok: true, text: t('claim.success') })
+      // Re-read the role from the server so the admin badge + panel appear.
+      window.setTimeout(() => window.location.reload(), 600)
+    } catch (err) {
+      const status = (err as { status?: number }).status
+      setMessage({
+        ok: false,
+        text: status === 410 ? t('claim.taken') : err instanceof Error ? err.message : 'Claim failed.'
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (seat !== 'open') return null
+
+  return (
+    <Reveal>
+      <form className="card form" onSubmit={handleClaim} style={{ marginTop: 14 }}>
+        <h3 style={{ margin: 0 }}>{t('claim.title')}</h3>
+        <p className="muted" style={{ margin: 0, fontSize: '0.9rem' }}>{t('claim.desc')}</p>
+        <label className="field">
+          <span>{t('claim.code')}</span>
+          <input value={code} onChange={e => setCode(e.target.value)} placeholder="••••" autoComplete="off" />
+        </label>
+        {message ? (
+          <p className={message.ok ? 'form-success' : 'form-error'}>{message.text}</p>
+        ) : null}
+        <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !code.trim()}>
+          {busy ? t('claim.claiming') : t('claim.submit')}
+        </button>
+      </form>
+    </Reveal>
   )
 }
 

@@ -34,7 +34,7 @@ export default function Hero({
         <div className="hero-split container">
           <div className="hero-copy">
             <Reveal delay={80}>
-              <h1><RevealText text={title} /></h1>
+              <h1 className={site.textReveal ? 'cascade-on' : undefined}><RevealText text={title} /></h1>
             </Reveal>
             <Reveal delay={160}>
               <p className="tagline" style={{ marginInline: 0 }}>{tagline}</p>

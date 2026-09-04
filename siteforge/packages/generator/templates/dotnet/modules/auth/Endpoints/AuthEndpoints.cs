@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Api.Endpoints;
 
 public record RegisterRequest(string Email, string Password);
+public record ClaimAdminRequest(string Code);
 
 public static class AuthEndpoints
 {
@@ -38,8 +39,10 @@ public static class AuthEndpoints
                 return Results.Conflict(new { message = "An account with this email already exists." });
             }
 
-            var isFirstUser = !await db.Users.AnyAsync();
-            var user = new User { Email = email, IsAdmin = isFirstUser };
+            // Public registration NEVER grants admin. Every new account is a
+            // plain customer; the owner claims admin once via claim-admin
+            // (setup code) or the promote-admin CLI command.
+            var user = new User { Email = email, IsAdmin = false };
             user.PasswordHash = hasher.HashPassword(user, request.Password);
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -83,6 +86,38 @@ public static class AuthEndpoints
                 await db.Tokens.Where(t => t.Id == tokenValue).ExecuteDeleteAsync();
             }
             return Results.NoContent();
+        });
+
+        // Public, boolean-only flag so the UI can hide the one-time claim
+        // card once an admin exists (no emails or counts leak).
+        app.MapGet("/api/auth/admin-status", async (AppDbContext db) =>
+        {
+            return Results.Ok(new { hasAdmin = await db.Users.AnyAsync(u => u.IsAdmin) });
+        });
+
+        // One-time admin bootstrap: an authenticated user presents the owner
+        // setup code (AdminAccessCode chosen at site creation). Succeeds only
+        // while zero admins exist; afterwards it returns 410 and role changes
+        // go through an existing admin.
+        app.MapPost("/api/auth/claim-admin", async (ClaimAdminRequest request, HttpContext http, AppDbContext db, IConfiguration config) =>
+        {
+            var user = await GetUserFromRequestAsync(http, db);
+            if (user is null) return Results.Unauthorized();
+            var expected = config["AdminAccessCode"] ?? "";
+            if (expected.Length == 0)
+                return Results.Json(new { message = "Owner setup is not configured for this site." }, statusCode: 403);
+            if ((request.Code ?? "").Trim() != expected)
+                return Results.Json(new { message = "Wrong setup code." }, statusCode: 403);
+            await using var tx = await db.Database.BeginTransactionAsync();
+            if (await db.Users.AnyAsync(u => u.IsAdmin))
+            {
+                await tx.RollbackAsync();
+                return Results.Json(new { message = "An admin already exists. Ask an admin to promote you." }, statusCode: 410);
+            }
+            user.IsAdmin = true;
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return Results.Ok(new { email = user.Email, isAdmin = true });
         });
     }
 }

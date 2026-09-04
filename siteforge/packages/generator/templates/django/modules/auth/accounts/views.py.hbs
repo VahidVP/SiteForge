@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from rest_framework import serializers, status
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from django.db import transaction
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,13 +15,50 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Public registration NEVER grants admin. Every new account is a
+        # plain customer; the owner claims admin once via ClaimAdminView
+        # (setup code) or the promote_admin management command.
         user = serializer.save()
-        if User.objects.count() == 1:
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "email": user.email}, status=status.HTTP_201_CREATED)
+
+
+class AdminStatusView(APIView):
+    """Public, boolean-only flag so the UI can hide the one-time claim card
+    once an admin exists (no emails or counts leak)."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"hasAdmin": User.objects.filter(is_staff=True).exists()})
+
+
+class ClaimAdminView(APIView):
+    """One-time admin bootstrap: an authenticated user presents the owner
+    setup code (ADMIN_ACCESS_CODE chosen at site creation). Succeeds only
+    while zero admins exist; afterwards it returns 410 and role changes go
+    through an existing admin."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = str(request.data.get("code") or "").strip()
+        expected = getattr(settings, "ADMIN_ACCESS_CODE", "")
+        if not expected:
+            return Response({"detail": "Owner setup is not configured for this site."}, status=403)
+        if code != expected:
+            return Response({"detail": "Wrong setup code."}, status=403)
+        with transaction.atomic():
+            if User.objects.filter(is_staff=True).exists():
+                return Response(
+                    {"detail": "An admin already exists. Ask an admin to promote you."},
+                    status=410,
+                )
+            user = User.objects.select_for_update().get(pk=request.user.pk)
             user.is_staff = True
             user.is_superuser = True
             user.save(update_fields=["is_staff", "is_superuser"])
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "email": user.email}, status=status.HTTP_201_CREATED)
+        return Response({"email": user.email, "isAdmin": True})
 
 
 class LoginView(APIView):
@@ -47,69 +86,3 @@ class LogoutView(APIView):
         Token.objects.filter(user=request.user).delete()
         return Response(status=204)
 
-
-class AdminUserListView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        data = [
-            {"id": u.id, "email": u.email, "isAdmin": bool(u.is_staff)}
-            for u in User.objects.order_by("id")
-        ]
-        return Response(data)
-
-
-class AdminUserDeleteView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def delete(self, request, pk):
-        if request.user.pk == pk:
-            return Response({"detail": "You cannot delete your own account."}, status=400)
-        try:
-            user = User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            return Response({"detail": "User not found."}, status=404)
-        user.delete()
-        return Response(status=204)
-
-
-{{#if shop}}
-from shop.models import Product
-from shop.serializers import ProductSerializer
-
-
-class AdminProductListView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        serializer = ProductSerializer(Product.objects.order_by("id"), many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = ProductSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        product = serializer.save()
-        return Response(ProductSerializer(product).data, status=201)
-
-
-class AdminProductDeleteView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def delete(self, request, pk):
-        deleted, _ = Product.objects.filter(pk=pk).delete()
-        if not deleted:
-            return Response({"detail": "Product not found."}, status=404)
-        return Response(status=204)
-{{/if}}
-{{#if contact}}
-from contact.models import ContactMessage
-from contact.serializers import ContactMessageSerializer
-
-
-class AdminMessageListView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        serializer = ContactMessageSerializer(ContactMessage.objects.all(), many=True)
-        return Response(serializer.data)
-{{/if}}

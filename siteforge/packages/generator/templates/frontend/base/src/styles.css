@@ -243,6 +243,15 @@ body[data-cards='sharp'] {
   color: transparent;
 }
 
+/* ...but then the h1 itself must NOT paint: background-clip:text clips
+   through ALL descendant text, so h1-gradient + word-gradients double-paint
+   into a ghosted/smeared image that diverges mid-flight (each word moves,
+   the h1 mask doesn't). Plain-text heroes (no cascade spans) still use the
+   h1 gradient above — Hero adds .cascade-on only around RevealText. */
+.hero h1.cascade-on {
+  background: none;
+}
+
 .tagline {
   color: var(--muted);
   font-size: 1.15rem;

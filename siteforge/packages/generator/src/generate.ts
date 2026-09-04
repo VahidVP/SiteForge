@@ -93,7 +93,7 @@ export function buildCtx(bp: Blueprint): Ctx {
     auth: has('auth'),
     shop: has('shop-catalog'),
     contact: has('contact-form'),
-    adminAccessCode: !has('auth') ? (bp.adminAccessCode ?? '') : '',
+    adminAccessCode: bp.adminAccessCode ?? '',
     fReveal: ui('anim.reveal'),
     fLift: ui('anim.hover-lift'),
     fTextReveal: ui('anim.text-reveal'),

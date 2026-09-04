@@ -89,15 +89,16 @@ export function validateBlueprint(input: unknown): Blueprint {
     throw new Error('heroImage is too large (must be under ~450 KB).');
   }
 
-  let adminAccessCode = String(raw.adminAccessCode ?? '').trim();  if (modules.includes('auth')) {
-    adminAccessCode = '';
-  } else {
-    if (!adminAccessCode) {
-      throw new Error('Admin access code is required for sites without user accounts.');
-    }
-    if (!/^[A-Za-z0-9@#$_-]{4,64}$/.test(adminAccessCode)) {
-      throw new Error('Admin access code must be 4–64 characters and contain only letters, numbers, and @ # $ _ -');
-    }
+  // Owner setup code is required for every site. For sites without user
+  // accounts it unlocks /owner; for sites with accounts it is the one-time
+  // secret that lets the owner claim the admin role (public registration
+  // never grants admin — see claim-admin on both backends).
+  const adminAccessCode = String(raw.adminAccessCode ?? '').trim();
+  if (!adminAccessCode) {
+    throw new Error('Admin access code is required (owner setup code).');
+  }
+  if (!/^[A-Za-z0-9@#$_-]{4,64}$/.test(adminAccessCode)) {
+    throw new Error('Admin access code must be 4–64 characters and contain only letters, numbers, and @ # $ _ -');
   }
 
   return {

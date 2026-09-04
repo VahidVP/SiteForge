@@ -47,7 +47,8 @@ export interface Blueprint {
   contentWidth?: ContentWidth;
   content?: SiteContent;
   branding: Branding;
-  adminAccessCode?: string;
+  /** Owner setup code: unlocks /owner, and the one-time secret to claim admin on auth sites. */
+  adminAccessCode: string;
 }
 
 export interface ModuleInfo {

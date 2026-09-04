@@ -241,7 +241,7 @@ export default function App() {
           ...(logo ? { logo } : {}),
           logoMode
         },
-        adminAccessCode: modules.includes('auth') ? undefined : accessCode || undefined
+        adminAccessCode: accessCode || undefined
       } as Blueprint)
       setDone(true)
     } catch (err) {
@@ -310,7 +310,7 @@ export default function App() {
                 ? t('w.backendDjango')
                 : t('w.backendDotnet')}
             </p>
-            {!modules.includes('auth') && accessCode ? (
+            {accessCode ? (
               <p className="muted tip">🔑 {t('w.ownerCodeTip')} <strong>{accessCode}</strong></p>
             ) : null}
             {modules.includes('shop-catalog') ? (
@@ -324,10 +324,10 @@ export default function App() {
   }
 
   const shopOn = modules.includes('shop-catalog')
-  const authOn = modules.includes('auth')
-  // The owner access code is mandatory whenever User Accounts is off — it is the
-  // only key to /owner, so it can never be empty or weaker than the backend allows.
-  const accessCodeOk = authOn || /^[A-Za-z0-9@#$_-]{4,64}$/.test(accessCode.trim())
+  // The owner setup code is mandatory for every site: without User Accounts
+  // it unlocks /owner; with accounts it is the one-time secret that claims
+  // the admin role (public registration never grants admin).
+  const accessCodeOk = /^[A-Za-z0-9@#$_-]{4,64}$/.test(accessCode.trim())
   const canNext =
     (step === 0 && siteType !== null) ||
     step === 1 || step === 2 ||
@@ -703,19 +703,17 @@ export default function App() {
                 </div>
               </div>
 
-              {!authOn ? (
-                <label className="field">
-                  <span>{t('w.ownerCode')}</span>
-                  <input value={accessCode} minLength={4} required
-                    onChange={event => setAccessCode(event.target.value)} />
-                  <span className="muted" style={{ fontSize: '0.8rem' }}>
-                    {t('w.ownerHint')}
-                  </span>
-                  {!accessCodeOk ? (
-                    <p className="hint-error">{t('w.ownerCodeRequired')}</p>
-                  ) : null}
-                </label>
-              ) : null}
+              <label className="field">
+                <span>{t('w.ownerCode')}</span>
+                <input value={accessCode} minLength={4} required
+                  onChange={event => setAccessCode(event.target.value)} />
+                <span className="muted" style={{ fontSize: '0.8rem' }}>
+                  {t('w.ownerHint')}
+                </span>
+                {!accessCodeOk ? (
+                  <p className="hint-error">{t('w.ownerCodeRequired')}</p>
+                ) : null}
+              </label>
               {!/^[a-z][a-z0-9-]*$/.test(projectName) && projectName.length > 0 ? (
                 <p className="hint-error">{t('w.folderHint')}</p>
               ) : null}

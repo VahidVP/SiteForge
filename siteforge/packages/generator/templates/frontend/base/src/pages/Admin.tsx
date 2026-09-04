@@ -192,6 +192,15 @@ function UsersPanel() {
     }
   }
 
+  async function handleRole(id: number, isAdmin: boolean) {
+    try {
+      await api.admin.setUserRole(id, isAdmin)
+      load()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Role change failed.')
+    }
+  }
+
   if (error) return <div className="card error-card">{error}</div>
   if (users === null) return <div className="skeleton" style={{ height: 160 }} />
 
@@ -210,11 +219,21 @@ function UsersPanel() {
             <tr key={user.id}>
               <td>{user.email}</td>
               <td>{(user.isAdmin ?? user.is_staff) ? <span className="badge badge-admin">{t('admin.admin')}</span> : t('dash.profile')}</td>
-              <td style={{ textAlign: 'end' }}>
+              <td style={{ textAlign: 'end', whiteSpace: 'nowrap' }}>
                 {user.email !== email ? (
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>
-                    {t('admin.delete')}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginInlineEnd: 6 }}
+                      onClick={() => handleRole(user.id, !(user.isAdmin ?? user.is_staff))}
+                    >
+                      {(user.isAdmin ?? user.is_staff) ? t('admin.removeAdmin') : t('admin.makeAdmin')}
+                    </button>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>
+                      {t('admin.delete')}
+                    </button>
+                  </>
                 ) : (
                   <span className="muted" style={{ fontSize: '0.85rem' }}>{t('admin.you')}</span>
                 )}

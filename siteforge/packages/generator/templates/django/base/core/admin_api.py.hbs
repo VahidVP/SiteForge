@@ -128,8 +128,30 @@ class AdminUserDeleteView(APIView):
             return Response({"detail": "Not found."}, status=404)
         if request.user.is_authenticated and request.user.pk == user.pk:
             return Response({"detail": "You cannot delete your own account."}, status=400)
+        if user.is_staff and User.objects.filter(is_staff=True).count() <= 1:
+            return Response({"detail": "You cannot delete the last admin."}, status=400)
         user.delete()
         return Response(status=204)
+
+
+class AdminUserRoleView(APIView):
+    """Promote / demote accounts. Only a current admin (or owner code) can
+    call it; demoting the last admin is refused."""
+
+    permission_classes = [IsOwnerOrStaff]
+
+    def put(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+        make_admin = bool(request.data.get("isAdmin"))
+        if user.is_staff and not make_admin and User.objects.filter(is_staff=True).count() <= 1:
+            return Response({"detail": "You cannot demote the last admin."}, status=400)
+        user.is_staff = make_admin
+        user.is_superuser = make_admin
+        user.save(update_fields=["is_staff", "is_superuser"])
+        return Response({"id": user.id, "email": user.email, "isAdmin": bool(user.is_staff)})
 {{/if}}
 {{#if shop}}
 from shop.models import Order, PaymentSetting, Product, Ticket, TicketMessage
@@ -339,6 +361,7 @@ urlpatterns = [
 {{#if contact}}    path("messages/", AdminMessagesView.as_view()),
 {{/if}}{{#if auth}}    path("users/", AdminUsersView.as_view()),
     path("users/<int:pk>/", AdminUserDeleteView.as_view()),
+    path("users/<int:pk>/role/", AdminUserRoleView.as_view()),
 {{/if}}{{#if shop}}    path("products/", AdminProductsView.as_view()),
     path("products/<int:pk>/", AdminProductDeleteView.as_view()),
     path("orders/", AdminOrdersView.as_view()),

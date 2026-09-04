@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { api, getToken, setToken } from '../api/client'
+import { api, getToken, setOwnerToken, setToken } from '../api/client'
 
 interface AuthState {
   email: string | null
@@ -45,6 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(userEmail, password) {
         const res = await api.login(userEmail, password)
         applySession(res.token, res.email)
+        // A stale owner token from another generated site (shared localhost
+        // origin) must not survive into this session — authHeader prefers
+        // the user token now, and dropping the stale one removes the
+        // confusion at its root.
+        setOwnerToken(null)
         try {
           const meData = await api.me()
           setEmail(meData.email)
@@ -62,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signUp(userEmail, password) {
         const res = await api.register(userEmail, password)
         applySession(res.token, res.email)
+        // Same stale-owner cleanup as signIn above.
+        setOwnerToken(null)
         try {
           const meData = await api.me()
           setEmail(meData.email)
@@ -82,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // token already gone server-side
         }
         setToken(null)
+        setOwnerToken(null)
         setEmail(null)
         setIsAdmin(false)
         window.setTimeout(() => {

@@ -1,4 +1,5 @@
 using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Data;
 
@@ -12,6 +13,18 @@ public static class DbInitializer
 
         var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
         Directory.CreateDirectory(Path.Combine(webRoot, "media"));
+
+        // Admin is claimed explicitly, never by signup order: log the counts on
+        // every boot so a stale app.db (old `dotnet run` holding :8000, or a
+        // second email after a 409) is obvious instead of "I'm not admin" fog.
+{{#if auth}}
+        var userCount = await db.Users.CountAsync();
+        var adminCount = await db.Users.CountAsync(u => u.IsAdmin);
+        app.Logger.LogInformation(
+            "SiteForge backend ready with {UserCount} registered user(s), {AdminCount} admin(s). " +
+            "New signups are customers; the owner claims admin once via POST /api/auth/claim-admin with the setup code.",
+            userCount, adminCount);
+{{/if}}
 
         if (!db.Pages.Any())
         {

@@ -56,4 +56,32 @@ app.MapAdminEndpoints();
 
 await DbInitializer.InitializeAsync(app);
 
+{{#if auth}}
+// Recovery path for the one-time claim-admin flow (no setup code needed,
+ // needs server access): dotnet run -- promote-admin --email owner@shop.com
+var promoteIdx = args.ToList().IndexOf("promote-admin");
+if (promoteIdx >= 0)
+{
+    var emailArg = promoteIdx + 1 < args.Length && args[promoteIdx + 1] == "--email" && promoteIdx + 2 < args.Length
+        ? args[promoteIdx + 2].Trim().ToLowerInvariant()
+        : "";
+    if (string.IsNullOrEmpty(emailArg))
+    {
+        Console.Error.WriteLine("Usage: dotnet run -- promote-admin --email owner@example.com");
+        return;
+    }
+    using var promoteScope = app.Services.CreateScope();
+    var promoteDb = promoteScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var promoteUser = await promoteDb.Users.FirstOrDefaultAsync(u => u.Email == emailArg);
+    if (promoteUser is null)
+    {
+        Console.Error.WriteLine($"No account with email \"{emailArg}\".");
+        return;
+    }
+    promoteUser.IsAdmin = true;
+    await promoteDb.SaveChangesAsync();
+    Console.WriteLine($"\"{emailArg}\" is now a site admin.");
+    return;
+}
+{{/if}}
 app.Run();

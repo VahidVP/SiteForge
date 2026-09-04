@@ -161,6 +161,14 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-04 — First-user-is-admin replaced with one-time setup-code claim
+
+- **Why:** public `/register` granting staff on signup order had a TOCTOU race (two concurrent signups → two admins), let anyone who found a fresh deploy hijack ownership, and confused owners on stale DBs (old `dotnet run` on :8000, 2nd email after 409 → "I'm not admin"). Auth sites also had no fallback secret (`adminAccessCode` was force-cleared).
+- **New rule:** registration always creates a customer. The owner setup code (`ADMIN_ACCESS_CODE` / `AdminAccessCode`, now required for every site) claims admin once via `POST /api/auth/claim-admin {code}` — succeeds only while zero admins exist (atomic; afterwards `410`), or via CLI recovery (`promote_admin --email` / `dotnet run -- promote-admin --email`). Admins then promote/demote from Admin → Users (`PUT /api/admin/users/:id/role`), with last-admin guards on demote/delete.
+- **Files:** `validate.ts`/`generate.ts`/`shared` (code always required), Studio Identity step (always asks) + CLI `--admin-code` + examples, Django `accounts/views|urls` + `promote_admin` command + `core/admin_api` role view, .NET `AuthEndpoints` + `AdminEndpoints` + `Program` + `DbInitializer` log, frontend `client.claimAdmin` + Dashboard claim card + UsersPanel role buttons + new `claim.*`/`admin.makeAdmin` copy, generated `README`.
+- **Follow-up:** public `GET /api/auth/admin-status` (`{hasAdmin}` only, no data leaks) on both backends; the Dashboard claim card renders only while `hasAdmin` is false, so other accounts never see the section after the owner claims admin (fail-open to the form if the check errors — the server's 410 still guards).
+- **Verification:** root `npm run typecheck` clean; fresh shop/dotnet + shop/django + personal/django generations carry the new endpoints/UI with zero unrendered markers; generated .NET `dotnet build` 0/0; generated Django files `py_compile` clean.
+
 ### 2026-09-03 — Shop/C# reports: admin hardening, invisible cascade title fixed, section dividers
 
 Reproduced live on a generated shop/Blossom/.NET site (register → dashboard, About→Home navigation, full-page screenshots) before fixing:
