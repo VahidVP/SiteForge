@@ -920,7 +920,7 @@ code {
   border-radius: 999px;
 }
 
-/* navbar */
+/* navbar (mockup text runs a touch larger for readability) */
 
 .pv-nav {
   display: flex;
@@ -933,13 +933,6 @@ code {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--p-border);
   z-index: 30;
-}
-
-/* Every header sticks to the top of the mockup viewport while scrolling —
-   except the floating Glass Pill, which stays detached by design. */
-.pv-nav:not(.pv-nav--glass) {
-  position: sticky;
-  top: 0;
 }
 
 .pv-nav .pv-links {
@@ -957,7 +950,7 @@ code {
 
 .pv-brand-name {
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -967,12 +960,15 @@ code {
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  object-fit: cover;
+  /* Logos are rarely square: contain shows the whole mark instead of
+     center-cropping it like cover did. Mirrors .brand-logo. */
+  object-fit: contain;
+  background: var(--p-surface);
   flex-shrink: 0;
 }
 
 .pv-link {
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   color: color-mix(in srgb, var(--p-fg) 82%, transparent);
   white-space: nowrap;
   cursor: pointer;
@@ -1053,7 +1049,12 @@ code {
   margin-inline-start: 0;
 }
 
+/* The floating Glass Pill is the only header that sticks while the mockup
+   scrolls (top: 8px keeps its floating gap); the rest scroll away. */
 .pv-nav--glass {
+  position: sticky;
+  top: 8px;
+  z-index: 30;
   margin: 8px 10px;
   height: 38px;
   padding-inline: 14px;

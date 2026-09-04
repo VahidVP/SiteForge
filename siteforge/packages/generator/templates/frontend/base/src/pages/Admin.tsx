@@ -645,21 +645,22 @@ function MediaPicker({ value, onChange, max = 8 }: { value: string[]; onChange: 
           ))}
         </div>
       ) : null}
+      {/* Library grid hides already-chosen images — otherwise every pick
+          shows twice (once above, once highlighted below), which reads as
+          a duplicate in the edit form. Unpick via the ✕ above to return
+          an image to the library. */}
       <div className="media-grid">
-        {(media ?? []).map(file => {
-          const isSelected = selected.includes(file.url)
-          return (
-            <button
-              key={file.url}
-              type="button"
-              className={'media-item' + (isSelected ? ' selected' : '')}
-              onClick={() => toggle(file.url)}
-              title={file.name}
-            >
-              <img src={resolveImageUrl(file.url)} alt={file.name} loading="lazy" />
-            </button>
-          )
-        })}
+        {(media ?? []).filter(file => !selected.includes(file.url)).map(file => (
+          <button
+            key={file.url}
+            type="button"
+            className="media-item"
+            onClick={() => toggle(file.url)}
+            title={file.name}
+          >
+            <img src={resolveImageUrl(file.url)} alt={file.name} loading="lazy" />
+          </button>
+        ))}
       </div>
       {media !== null && media.length === 0 && selected.length === 0 ? (
         <p className="muted" style={{ fontSize: '0.85rem', margin: '6px 0 0' }}>{t('admin.noData')}</p>

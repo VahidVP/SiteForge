@@ -161,6 +161,14 @@ Nothing right now — baseline is verified and stable.
 
 ## 8. Changelog (append-only, newest first)
 
+### 2026-09-03 — Sticky reversal (glass only), bigger preview nav text, logo fit, no duplicate picks
+
+- **Sticky reversed per owner request: ONLY the Glass Pill sticks now, every other header scrolls away** (preview mockup; generated sites were never touched — they still stick on all headers, say the word to mirror this there). The previous round had it backwards (all-but-glass). Glass keeps its 8px floating gap while stuck (`top: 8px`).
+- **Preview navbar text slightly bigger** (same direction as the earlier generated-site bump): links `0.66 → 0.70rem`, brand `0.82 → 0.86rem`. Verified the widest case (shop: 5 links + chip + button) has zero horizontal overflow in the 352px mockup.
+- **Navbar logo no longer looks broken when small.** Root cause: both `.brand-logo` (generated) and `.pv-logo` (preview) used `object-fit: cover` in a square box, so any non-square uploaded logo got center-cropped — at 18–36px that reads as a weird mush. Both now use `contain` on a surface-colored tile so the whole mark always shows.
+- **Edit-form duplicate image fixed.** Root cause: last round's "chosen images" row + the full library grid (with the pick highlighted) rendered the same image twice — correct data, confusing display, only in the create/edit forms. The library grid now filters out already-chosen images (unpick via ✕ returns them to the grid); dead `isSelected` branch removed.
+- **Verification:** harness extended and re-run — sticky-glass vs scrolling Classic/Centered/Minimal/Bordered, nav sizes, shop overflow, plus the full animation suite incl. the below-fold reveal (which caught a real measurement lesson: a 27%-visible section correctly counts as intersecting at threshold 0.2, so that check now uses a 160px viewport for a truly-hidden state) — **42/42 passed, zero page errors**. Root `npm run typecheck` + studio `vite build` clean; fresh generation carries the picker/logo fixes with generated-frontend `tsc` + `vite build` clean.
+
 ### 2026-09-03 — Live preview rewritten: scrollable viewport, sticky headers, non-interfering animations, Farsi hero font
 
 Four reports, one rewrite of the preview's animation system (generated sites were already correct throughout):
