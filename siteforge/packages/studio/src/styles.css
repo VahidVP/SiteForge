@@ -901,7 +901,23 @@ code {
 .page {
   display: flex;
   flex-direction: column;
-  min-height: 340px;
+  /* The mockup is a real mini-viewport: fixed height with its own scroll, so
+     sticky headers stick and scroll-driven effects (reveal) can be demoed by
+     scrolling inside it. Chained scrolling is contained on purpose. */
+  height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--p-border) transparent;
+}
+
+.page::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page::-webkit-scrollbar-thumb {
+  background: var(--p-border);
+  border-radius: 999px;
 }
 
 /* navbar */
@@ -911,9 +927,19 @@ code {
   align-items: center;
   gap: 10px;
   height: 46px;
+  flex-shrink: 0;
   padding-inline: 14px;
   background: color-mix(in srgb, var(--p-bg) 80%, transparent);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--p-border);
+  z-index: 30;
+}
+
+/* Every header sticks to the top of the mockup viewport while scrolling —
+   except the floating Glass Pill, which stays detached by design. */
+.pv-nav:not(.pv-nav--glass) {
+  position: sticky;
+  top: 0;
 }
 
 .pv-nav .pv-links {
@@ -1331,6 +1357,18 @@ code {
 
 .pv-card--zoom:hover .pv-thumb {
   transform: scale(1.18);
+}
+
+/* Float Softly toggle: the bob lives on an INNER wrapper, never on the card
+   itself — a running infinite animation overrides inline (:tilt) and :hover
+   (:lift) transforms on the same element, which is why those toggles used to
+   die when combined. Nested, everything composes. */
+.pv-float {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  animation: float-y 5s ease-in-out infinite;
 }
 
 .pv-thumb {

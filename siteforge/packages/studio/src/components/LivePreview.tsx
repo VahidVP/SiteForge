@@ -182,6 +182,10 @@ export function LivePreview(props: LivePreviewProps) {
   const tagline =
     (lang === 'fa' ? (props.taglineFa.trim() || props.tagline) : props.tagline).trim() || undefined
 
+  // Mirror the generated site: body[data-lang='fa'] swaps the whole type stack
+  // to Vazirmatn. Without this the hero title (.pv-title uses --p-font-head)
+  // renders Farsi text in the latin theme font.
+  const faStack = "'Vazirmatn', 'Segoe UI', system-ui, sans-serif"
   const cssVars = {
     '--p-bg': theme.bg,
     '--p-fg': theme.fg,
@@ -191,8 +195,8 @@ export function LivePreview(props: LivePreviewProps) {
     '--p-accent': theme.accent,
     '--p-accent2': theme.accent2,
     '--p-on-accent': theme.onAccent,
-    '--p-font-head': theme.fontHead,
-    '--p-font-body': theme.fontBody
+    '--p-font-head': lang === 'fa' ? faStack : theme.fontHead,
+    '--p-font-body': lang === 'fa' ? faStack : theme.fontBody
   } as CSSProperties
 
   return (
@@ -229,6 +233,7 @@ export function LivePreview(props: LivePreviewProps) {
           />
           {props.uiModules.includes('anim.marquee') ? <PreviewMarquee language={lang} /> : null}
           <PreviewSection
+            key={`${props.siteType}|${props.uiModules.join('|')}`}
             siteType={props.siteType}
             uiModules={props.uiModules}
             language={lang}
@@ -456,11 +461,15 @@ function useVisible<T extends HTMLElement>(threshold = 0.2) {
       setVisible(true)
       return
     }
+    // Observe inside the mockup's own scroll viewport (.page), not the wizard
+    // window — the section should reveal when scrolled into view *in the
+    // preview*, exactly like a visitor scrolling the real site.
+    const root = el.closest('.page')
     const obs = new IntersectionObserver(
       entries => {
         if (entries[0]?.isIntersecting) setVisible(true)
       },
-      { threshold }
+      { root, threshold }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -479,7 +488,7 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
   const reveal = uiModules.includes('anim.reveal')
   const lift = uiModules.includes('anim.hover-lift')
   const tilt = uiModules.includes('anim.tilt')
-  const float = uiModules.includes('anim.float') && !tilt
+  const float = uiModules.includes('anim.float')
   const zoom = uiModules.includes('anim.zoom')
   const { ref, visible } = useVisible<HTMLDivElement>()
   const sectionLabel = heading?.trim() || SECTION_HEADING[siteType ?? 'personal'][language]
@@ -488,24 +497,21 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
   const names = PRODUCT_NAMES[language]
   const prices = PRODUCT_PRICES[language]
 
-  // Entrance (+ optional float follow-through) per card. When reveal is on but
-  // the section hasn't scrolled into view yet, cards stay invisible — exactly
-  // like the generated site's scroll reveal. Keyed on the toggle set below so
-  // flipping a checkbox visibly replays the entrance.
-  function cardAnim(i: number): CSSProperties {
-    if (!reveal && !float) return {}
-    if (reveal && !visible) return { opacity: 0 }
-    const parts: string[] = []
-    const delays: string[] = []
-    if (reveal) {
-      parts.push('fade-up .55s cubic-bezier(.22,.61,.36,1) both')
-      delays.push(`${i * 90}ms`)
+  // Composition rules (the whole point of the rewrite): every effect owns a
+  // different element, so enabling all of them can never break one another.
+  // - Outer card: entrance (opacity+rise, `backwards` fill so it releases the
+  //   transform the moment it finishes) + tilt (inline style) + lift (:hover).
+  // - Inner .pv-float: the infinite bob. A running infinite animation wins
+  //   over inline/:hover transforms on the SAME element, which is exactly why
+  //   tilt and lift used to "stop working" — nested, they compose instead.
+  // Keyed on the toggle set so flipping a checkbox visibly replays.
+  function cardStyleFor(i: number): CSSProperties {
+    if (!reveal) return {}
+    if (!visible) return { opacity: 0 }
+    return {
+      animation: 'fade-up .55s cubic-bezier(.22,.61,.36,1) backwards',
+      animationDelay: `${i * 90}ms`
     }
-    if (float) {
-      parts.push('float-y 5s ease-in-out infinite')
-      delays.push(reveal ? `${600 + i * 90}ms` : `${i * 500}ms`)
-    }
-    return { animation: parts.join(', '), animationDelay: delays.join(', ') }
   }
 
   function handleTiltMove(e: MouseEvent<HTMLDivElement>) {
@@ -524,6 +530,27 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
     })
   }
 
+  function cardBody(i: number) {
+    // Every card gets a cover thumbnail (like the generated portfolio/product
+    // cards), so Image Zoom always has something to zoom — on every site type.
+    return (
+      <div className={float ? 'pv-float' : undefined} style={float ? { animationDelay: `${i * 500}ms` } : undefined}>
+        <span className="pv-thumb" />
+        {shop ? (
+          <>
+            <b className="pv-name">{names[i]}</b>
+            <span className="pv-price">{prices[i]}</span>
+          </>
+        ) : (
+          <>
+            <b className="pv-line" />
+            <i className="pv-sub" />
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="pv-section" ref={ref}>
       <span className="pv-section-label">{sectionLabel}</span>
@@ -537,20 +564,9 @@ function PreviewSection({ siteType, uiModules, language, cardStyle, heading }: {
           <div
             key={i}
             className={'pv-card' + (lift ? ' pv-card--lift' : '') + (zoom ? ' pv-card--zoom' : '')}
-            style={{ borderRadius: radius, ...cardAnim(i) }}
+            style={{ borderRadius: radius, ...cardStyleFor(i) }}
           >
-            {shop ? (
-              <>
-                <span className="pv-thumb" />
-                <b className="pv-name">{names[i]}</b>
-                <span className="pv-price">{prices[i]}</span>
-              </>
-            ) : (
-              <>
-                <b className="pv-line" />
-                <i className="pv-sub" />
-              </>
-            )}
+            {cardBody(i)}
           </div>
         ))}
       </div>
