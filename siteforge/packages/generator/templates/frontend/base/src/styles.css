@@ -229,6 +229,20 @@ body[data-cards='sharp'] {
   color: transparent;
 }
 
+/* Word Cascade words paint their OWN gradient (same sweep, restarted per
+   word). A background-clip:text ancestor cannot paint through composited
+   descendants — and cascade words are composited while they animate
+   (transform/opacity) — so with the gradient only on the h1, titles went
+   invisible ("white on white") on light templates until the animation's
+   fill released them. Per-word gradients are immune: each word carries its
+   own paint, mid-flight and settled, on every template. */
+.hero h1 .word-cascade .word {
+  background: linear-gradient(120deg, var(--text) 30%, var(--accent-2) 75%, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .tagline {
   color: var(--muted);
   font-size: 1.15rem;
@@ -287,11 +301,36 @@ body[data-cards='sharp'] {
 
 .stat-label { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
 
-.section { padding-block: 34px; }
+.section {
+  padding-block: 34px;
+  /* Hairline opener between content sections, driven by the theme border so
+     it reads on dark and light templates alike. Sections that open the page
+     keep a transparent (but layout-identical) border for steady rhythm. */
+  border-top: 1px solid var(--border);
+}
+
+.page > :first-child.section,
+.page > :first-child .section {
+  border-top-color: transparent;
+}
 
 .section-title {
   font-size: 1.7rem;
-  margin-bottom: 24px;
+  margin: 0 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Accent bar that makes section headings scannable even when the page
+   background and the cards are nearly the same tint (e.g. Blossom). */
+.section-title::before {
+  content: '';
+  width: 26px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  flex-shrink: 0;
 }
 
 .grid { display: grid; gap: 20px; align-items: stretch; }

@@ -49,7 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const meData = await api.me()
           setEmail(meData.email)
           setIsAdmin(meData.isAdmin)
-        } catch {}
+        } catch {
+          // Never leave a half-logged-in "normal user" session: without the
+          // profile (and its admin flag) the UI would silently hide the admin
+          // panel. Clear everything and let Login show the real error.
+          setToken(null)
+          setEmail(null)
+          setIsAdmin(false)
+          throw new Error('Signed in, but the profile could not be loaded. Check your connection and try again.')
+        }
       },
       async signUp(userEmail, password) {
         const res = await api.register(userEmail, password)
@@ -58,7 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const meData = await api.me()
           setEmail(meData.email)
           setIsAdmin(meData.isAdmin)
-        } catch {}
+        } catch {
+          // Same as signIn above: a silent failure here strands the first
+          // user as a seeming non-admin with no admin button in sight.
+          setToken(null)
+          setEmail(null)
+          setIsAdmin(false)
+          throw new Error('Account created, but the profile could not be loaded. Sign in again to continue.')
+        }
       },
       signOut() {
         try {

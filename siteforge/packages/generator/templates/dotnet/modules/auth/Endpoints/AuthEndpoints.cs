@@ -38,7 +38,7 @@ public static class AuthEndpoints
                 return Results.Conflict(new { message = "An account with this email already exists." });
             }
 
-            var isFirstUser = !db.Users.Any();
+            var isFirstUser = !await db.Users.AnyAsync();
             var user = new User { Email = email, IsAdmin = isFirstUser };
             user.PasswordHash = hasher.HashPassword(user, request.Password);
             db.Users.Add(user);
